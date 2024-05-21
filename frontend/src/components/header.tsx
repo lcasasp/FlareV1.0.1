@@ -1,0 +1,22 @@
+import React from 'react';
+
+const Header: React.FC = () => {
+  return (
+    <header className="bg-white shadow-md">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center">
+          <img src="/flare.png" alt="Flare Logo" className="h-10" />
+          <h1 className="text-xl font-bold ml-2">Flare</h1>
+        </div>
+        <nav className="flex items-center">
+          <a href="/" className="text-gray-700 px-4">About</a>
+          <a href="/" className="text-gray-700 px-4">Page</a>
+          <a href="/" className="text-gray-700 px-4">Page</a>
+          <button className="bg-black text-white px-4 py-2 rounded">Button</button>
+        </nav>
+      </div>
+    </header>
+  );
+};
+
+export default Header;
