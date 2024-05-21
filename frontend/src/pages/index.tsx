@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import Header from '../components/header';
 import Article from '../components/article';
+import InteractiveGlobe from '../components/globe';
 import SearchBar from '../components/searchBar';
 
 interface Article {
@@ -29,6 +30,9 @@ const Home: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <Header />
+
+      <InteractiveGlobe />
+
       <SearchBar onResults={handleSearchResults} />
       {articles.map((article, index) => (
         <Article key={index} article={article} />
