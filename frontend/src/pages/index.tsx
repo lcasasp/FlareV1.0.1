@@ -4,11 +4,17 @@ import Header from '../components/header';
 import Article from '../components/article';
 import InteractiveGlobe from '../components/globe';
 import SearchBar from '../components/searchBar';
+import dynamic from 'next/dynamic';
+
+// Dynamically import the ThreeScene component
+const ThreeScene = dynamic(() => import('../components/three'), { ssr: false });
+
 
 interface Article {
   title: string;
   body: string;
   url: string;
+  image: string;
 }
 
 const Home: React.FC = () => {
@@ -31,7 +37,8 @@ const Home: React.FC = () => {
     <div className="container mx-auto p-4">
       <Header />
 
-      <InteractiveGlobe />
+      {/* <InteractiveGlobe /> */}
+      <ThreeScene />
 
       <SearchBar onResults={handleSearchResults} />
       {articles.map((article, index) => (

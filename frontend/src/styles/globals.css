@@ -17,17 +17,37 @@
 } */
 
 body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #ecfff4 0%, #d1ffeb 100%);
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
+  /* background: linear-gradient(
       to bottom,
       transparent,
       rgb(var(--background-end-rgb))
     )
-    rgb(var(--background-start-rgb));
+    rgb(var(--background-start-rgb)); */
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+.clearfix::after {
+  content: "";
+  display: table;
+  clear: both;
+}
+
+.article-card {
+  display: block;
+}
+
+.article-image {
+  float: left;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+  max-width: 150px; /* Adjust as needed */
+  max-height: 150px; /* Adjust as needed */
 }

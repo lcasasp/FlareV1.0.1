@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 
 interface SearchBarProps {
-  onResults: (articles: Array<{ title: string; body: string; url: string }>) => void;
+  onResults: (articles: Array<{ title: string; body: string; url: string; image: string }>) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
@@ -27,17 +27,17 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
   };
 
   return (
-    <div className="flex mx-auto py-6 py-4 ">
+    <div className="flex justify-center my-8">
       <input
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Search for articles..."
-        className="border p-2 flex-grow rounded"
+        className="p-2 w-4/5 border rounded-l-full focus:outline-none"
         style={{ color: 'black' }}
       />
-      <button onClick={handleSearch} className="bg-blue-500 text-white p-2 ml-2 rounded">
+      <button onClick={handleSearch} className="p-2 bg-blue-500 text-white rounded-r-full hover:bg-blue-700">
         Search
       </button>
     </div>
