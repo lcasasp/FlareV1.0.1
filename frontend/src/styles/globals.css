@@ -8,24 +8,8 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-} */
-
 body {
   font-family: 'Roboto', sans-serif;
-  background: linear-gradient(135deg, #ecfff4 0%, #d1ffeb 100%);
-  color: rgb(var(--foreground-rgb));
-  /* background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb)); */
 }
 
 @layer utilities {
@@ -54,5 +38,5 @@ body {
 
 .article-card:hover {
   transform: perspective(1000px) rotateX(var(--rot-x)) rotateY(var(--rot-y)) scale(1.01);
-  background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(255, 255, 255, 0.15), transparent);
+  background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(175, 252, 161, 0.23), transparent);
 }
