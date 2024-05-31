@@ -47,8 +47,9 @@ def search_news():
                 "query": query,
                 # Adjust fields according to your data model
                 "fields": ["title", "body"]
-            }
+            },
         },
+        "size": 1000
     }
 
     search_result = es.search(index="news", body=search_body)

@@ -2,7 +2,7 @@ import React from 'react';
 
 const Header: React.FC = () => {
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white shadow-md rounded">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <img src="/flare.png" alt="Flare Logo" className="h-10" />

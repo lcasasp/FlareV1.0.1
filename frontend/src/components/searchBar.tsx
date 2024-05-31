@@ -1,23 +1,14 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 interface SearchBarProps {
-  onResults: (articles: Array<{ title: string; body: string; url: string; image: string }>) => void;
+  onResults: (query: string) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
   const [query, setQuery] = useState('');
 
-  const handleSearch = async () => {
-    try {
-      const response = await axios.get('http://127.0.0.1:5000/search', {
-        params: { query },
-      });
-      const articles = response.data.map((hit: any) => hit._source);
-      onResults(articles);
-    } catch (error) {
-      console.error('Error searching articles:', error);
-    }
+  const handleSearch = () => {
+    onResults(query);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -30,14 +21,16 @@ const SearchBar: React.FC<SearchBarProps> = ({ onResults }) => {
     <div className="flex justify-center my-8">
       <input
         type="text"
+        placeholder="Search for articles..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Search for articles..."
-        className="p-2 w-4/5 border rounded-l-full focus:outline-none"
-        style={{ color: 'black' }}
+        className="p-2 w-2/3 border rounded-l-full focus:outline-none"
       />
-      <button onClick={handleSearch} className="p-2 bg-blue-500 text-white rounded-r-full hover:bg-blue-700">
+      <button
+        onClick={handleSearch}
+        className="p-2 bg-blue-500 text-white rounded-r-full hover:bg-blue-700"
+      >
         Search
       </button>
     </div>

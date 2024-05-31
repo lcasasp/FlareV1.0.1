@@ -7,11 +7,9 @@ const ThreeScene: React.FC = () => {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    // Create scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
+    // scene.background = new THREE.Color(0x000000);
 
-    // Create camera
     const camera = new THREE.PerspectiveCamera(
       75,
       mountRef.current.clientWidth / mountRef.current.clientHeight,
@@ -21,7 +19,7 @@ const ThreeScene: React.FC = () => {
     camera.position.z = 5;
 
     // Create renderer
-    const renderer = new THREE.WebGLRenderer();
+    const renderer = new THREE.WebGLRenderer({ alpha: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
     mountRef.current.appendChild(renderer.domElement);
 
