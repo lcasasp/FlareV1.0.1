@@ -1,15 +1,50 @@
 import requests
 from elasticsearch import Elasticsearch
 from config import Config
-from fake_test import fake_fetch_news
+# from fake_test import fake_fetch_news
 import logging
+import eventregistry
+from eventregistry import *
 
+er = EventRegistry(apiKey = Config.NEWS_API_KEY, allowUseOfArchive=False)
 
 def fetch_news():
-    url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={
-        Config.NEWS_API_KEY}"
-    response = requests.get(url)
-    return response.json()['articles'] if response.status_code == 200 else None
+    q = QueryArticlesIter(keywords = None,
+    conceptUri = ["http://en.wikipedia.org/wiki/Climate_change", "http://en.wikipedia.org/wiki/Energy"],
+    categoryUri = ["dmoz/Business", "dmoz/Science"],
+    sourceUri = None,
+    sourceLocationUri = None,
+    sourceGroupUri = None,
+    authorUri = None,
+    locationUri = None,
+    lang = None,
+    dateStart = None,
+    dateEnd = None,
+    dateMentionStart = None,
+    dateMentionEnd = None,
+    keywordsLoc = "body",
+    ignoreKeywords = None,
+    ignoreConceptUri = None,
+    ignoreCategoryUri = None,
+    ignoreSourceUri = None,
+    ignoreSourceLocationUri = None,
+    ignoreSourceGroupUri = None,
+    ignoreAuthorUri = None,
+    ignoreLocationUri = None,
+    ignoreLang = None,
+    ignoreKeywordsLoc = "body",
+    isDuplicateFilter = "keepAll",
+    hasDuplicateFilter = "keepAll",
+    eventFilter = "keepAll",
+    startSourceRankPercentile = 0,
+    endSourceRankPercentile = 100,
+    minSentiment = -1,
+    maxSentiment = 1,
+    dataType = "news",
+    requestedResult = None)
+    q.setRequestedResult(RequestArticlesInfo(count = 100, sortBy = "date"))
+    res = er.execQuery(q)
+    return res
 
 
 def extract_and_prepare_news_data(news_api_response):
@@ -27,6 +62,7 @@ def extract_and_prepare_news_data(news_api_response):
             "source_title": article.get('source', {}).get('title'),
             "image": article.get('image'),
             "sentiment": article.get('sentiment'),
+            #"truthfulness": MEDIA VALIDATOR HERE!!!
             "concepts": [
                 {"uri": concept.get('uri'), "label": concept.get(
                     'label', {}).get('eng'), "score": concept.get('score')}
@@ -43,8 +79,8 @@ def add_indexed_news():
         basic_auth=('elastic', Config.ELASTIC_PW),
         verify_certs=False,
     )
-    # news_api_response = fetch_news()
-    news_api_response = fake_fetch_news()
+    news_api_response = fetch_news()
+    # news_api_response = fake_fetch_news()
     articles = extract_and_prepare_news_data(news_api_response)
 
     for article in articles:
