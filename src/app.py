@@ -9,13 +9,14 @@ app = Flask(__name__)
 
 CORS(app)
 
+es = Elasticsearch(
+    ["https://localhost:9200"],
+    basic_auth=('elastic', Config.ELASTIC_PW),
+    verify_certs=False  # Only for development purposes
+)
+
 @app.route('/articles', methods=['GET'])
 def get_articles():
-    es = Elasticsearch(
-        ["https://localhost:9200"],
-        basic_auth=('elastic', Config.ELASTIC_PW),
-        verify_certs=False  # Only for development purposes
-    )
 
     query = {
         "query": {
@@ -34,12 +35,6 @@ def get_articles():
 def search_news():
     query = request.args.get('query', default="*", type=str)
     logging.debug(f"Received query: {query}")
-
-    es = Elasticsearch(
-        ["https://localhost:9200"],
-        basic_auth=('elastic', Config.ELASTIC_PW),
-        verify_certs=False  # only for development purposes
-    )
 
     search_body = {
         "query": {
@@ -62,6 +57,11 @@ def fetch_and_index_news():
     articles = add_indexed_news()
     return articles
 
+@app.route('/es-index')
+def create_es_index():
+    if not es.indices.exists(index="news"):
+        es.indices.create(index="news", ignore=400)
+    return jsonify({"message": Config.ELASTIC_PW})
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,7 +1,6 @@
 import requests
 from elasticsearch import Elasticsearch
 from config import Config
-# from fake_test import fake_fetch_news
 import logging
 import eventregistry
 from eventregistry import *
@@ -80,11 +79,12 @@ def add_indexed_news():
         verify_certs=False,
     )
     news_api_response = fetch_news()
-    # news_api_response = fake_fetch_news()
     articles = extract_and_prepare_news_data(news_api_response)
 
     for article in articles:
         logging.debug(f"Indexing article: {article}")
+        if not es.indices.exists(index="news"):
+            es.indices.create(index="news", ignore=400)
         es.index(index="news", body=article)
 
     return articles
