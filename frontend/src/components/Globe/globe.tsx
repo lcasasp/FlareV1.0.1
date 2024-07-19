@@ -1,10 +1,19 @@
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import gsap from "gsap";
 import getStarfield from "./src/getStarfield";
 import { getFresnelMat } from "./src/getFresnelMat";
 
-const ThreeGlobe: React.FC = () => {
+// Example locations data
+// const locations = [
+//   { label: 'New York', latitude: 40.7128, longitude: -74.0060 },
+//   { label: 'London', latitude: 51.5074, longitude: -0.1278 },
+//   { label: 'Tokyo', latitude: 35.6895, longitude: 139.6917 },
+//   { label: 'Sydney', latitude: -33.8688, longitude: 151.2093 },
+// ];
+
+const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,38 +34,64 @@ const ThreeGlobe: React.FC = () => {
     }
 
     const earthGroup = new THREE.Group();
-    earthGroup.rotation.z = (-23.4 * Math.PI) / 180;
     scene.add(earthGroup);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = false;
 
-    const detail = 12;
     const loader = new THREE.TextureLoader();
-    const geometry = new THREE.IcosahedronGeometry(1, detail);
+    const geometry = new THREE.SphereGeometry(1, 64, 64); // Use a standard sphere geometry
     const material = new THREE.MeshPhongMaterial({
-      map: loader.load("/textures/00_earthmap1k.jpg"),
-      specularMap: loader.load("/textures/02_earthspec1k.jpg"),
+      map: loader.load("/textures/2k_earth_daymap.jpg"),
+      specularMap: loader.load("/textures/2k_earth_specular_map.jpg"),
       bumpMap: loader.load("/textures/01_earthbump1k.jpg"),
-      bumpScale: 0.04,
+      bumpScale: 5,
     });
 
     const earthMesh = new THREE.Mesh(geometry, material);
     earthGroup.add(earthMesh);
 
+    // Convert lat/lon to THREE.js coordinates
+    function latLongToVector3(lat: number, lon: number, radius = 1) {
+        const phi = (90 - lat) * (Math.PI / 180);
+        const theta = (lon + 180) * (Math.PI / 180);
+
+        return new THREE.Vector3(
+          -(radius * Math.sin(phi) * Math.cos(theta)),
+          radius * Math.cos(phi),
+          radius * Math.sin(phi) * Math.sin(theta)
+        );
+    }
+
+    articles.forEach((article) => {
+      article.locations.forEach((location: { latitude: number, longitude: number }) => {
+        const { latitude, longitude } = location;
+        const position = latLongToVector3(latitude, longitude);
+        const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.2);
+        const markerMaterial = new THREE.MeshBasicMaterial({ color: "#3CD2F9", transparent: true, opacity: 0.5 });
+        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+        marker.position.copy(position);
+        marker.lookAt(new THREE.Vector3(0, 0, 0));
+        marker.position.normalize().multiplyScalar(1);
+        earthGroup.add(marker);
+
+        gsap.to(marker.scale, { z: 1.5, duration: 2, repeat: -1, yoyo: true });
+      });
+    });
+
     const lightsMat = new THREE.MeshBasicMaterial({
-      map: loader.load("/textures/03_earthlights1k.jpg"),
+      map: loader.load("/textures/2k_earth_nightmap.jpg"),
       blending: THREE.AdditiveBlending,
     });
     const lightsMesh = new THREE.Mesh(geometry, lightsMat);
     earthGroup.add(lightsMesh);
 
     const cloudsMat = new THREE.MeshStandardMaterial({
-      map: loader.load("/textures/04_earthcloudmap.jpg"),
+      map: loader.load("/textures/2k_earth_clouds.jpg"),
       transparent: true,
       opacity: 0.3,
       blending: THREE.AdditiveBlending,
-      alphaMap: loader.load("/textures/05_earthcloudmaptrans.jpg"),
+      alphaMap: loader.load("/textures/2k_earth_clouds.jpg"),
     });
     const cloudsMesh = new THREE.Mesh(geometry, cloudsMat);
     cloudsMesh.scale.setScalar(1.003);
@@ -74,15 +109,15 @@ const ThreeGlobe: React.FC = () => {
     sunLight.position.set(-2, 0.5, 1.5);
     scene.add(sunLight);
 
+    earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
+
     const animate = () => {
       requestAnimationFrame(animate);
 
-      const rotationSpeed = 0.001;
+      const rotationSpeed = 0.0004;
 
-      earthMesh.rotation.y += rotationSpeed;
-      lightsMesh.rotation.y += rotationSpeed;
-      cloudsMesh.rotation.y += rotationSpeed * 1.65;
-      glowMesh.rotation.y += rotationSpeed;
+      earthGroup.rotation.y += rotationSpeed;
+      cloudsMesh.rotation.y += rotationSpeed / 3;
       stars.rotation.y -= rotationSpeed / 10;
 
       renderer.render(scene, camera);
@@ -100,10 +135,10 @@ const ThreeGlobe: React.FC = () => {
     window.addEventListener("resize", handleWindowResize, false);
 
     return () => {
-      window.removeEventListener("resize", handleWindowResize);
+      window.removeEventListener('resize', handleWindowResize);
       mountRef.current?.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [articles]);
 
   return <div ref={mountRef} className="background-globe" />;
 };
