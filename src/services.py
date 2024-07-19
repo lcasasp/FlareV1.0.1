@@ -43,7 +43,12 @@ def fetch_news():
                           maxSentiment=1,
                           dataType="news",
                           requestedResult=None)
-    q.setRequestedResult(RequestArticlesInfo(count=100, sortBy="date"))
+    q.setRequestedResult(RequestArticlesInfo(count=100, sortBy="date",
+                                             returnInfo=ReturnInfo(articleInfo=ArticleInfoFlags(concepts=True, image=True),
+                                                                    locationInfo=LocationInfoFlags(label=True, geoLocation=True),
+                                                                   )
+                                             )
+                         )
     res = er.execQuery(q)
     return res
 
@@ -53,7 +58,6 @@ def extract_and_prepare_news_data(news_api_response):
     prepared_articles = []
 
     for article in articles:
-
         prepared_article = {
             "uri": article.get('uri'),
             "date": article.get('dateTimePub'),
@@ -66,9 +70,18 @@ def extract_and_prepare_news_data(news_api_response):
             "sentiment": article.get('sentiment'),
             # "truthfulness": MEDIA VALIDATOR HERE!!!
             "concepts": [
-                {"uri": concept.get('uri'), "label": concept.get(
-                    'label', {}).get('eng'), "score": concept.get('score')}
-                for concept in article.get('concepts', [])
+                {"uri": concept.get('uri'), 
+                 "label": concept.get('label', {}).get('eng'), 
+                 "score": concept.get('score'),
+                 "type": concept.get('type')}
+                for concept in article.get('concepts', []) if concept.get('type') != 'loc'
+            ],
+            "locations": [
+                {
+                 "label": concept.get('label', {}).get('eng'), 
+                 "latitude": float(concept.get('location', {}).get('lat', None)),
+                 "longitude": float(concept.get('location', {}).get('long', None))}
+                for concept in article.get('concepts', []) if concept.get('type') == 'loc' and concept.get('location')
             ],
         }
         prepared_articles.append(prepared_article)
@@ -102,6 +115,5 @@ def add_indexed_news():
             es.index(index="news", body=article)
         else:
             logging.debug(f"Skipping duplicate article: {article['title']}")
-
 
     return articles

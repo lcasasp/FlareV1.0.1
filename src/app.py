@@ -67,6 +67,18 @@ def create_es_index():
         es.indices.create(index="news", ignore=400)
     return jsonify({"message": Config.ELASTIC_PW})
 
+@app.route('/delete_index', methods=['DELETE'])
+def delete_index():
+    index_name = 'news'
+    try:
+        if es.indices.exists(index=index_name):
+            response = es.indices.delete(index=index_name)
+            return jsonify({"message": f"Index '{index_name}' deleted"}), 404
+        else:
+            return jsonify({"message": "Index not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)

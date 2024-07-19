@@ -12,6 +12,11 @@ interface Article {
   sentiment: string;
   url: string;
   image: string;
+  locations: {
+    label: string;
+    latitude: number;
+    longitude: number;
+  }[];
 }
 
 const ITEMS_PER_PAGE = 10;
