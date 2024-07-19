@@ -59,7 +59,7 @@ const Home: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <Header />
-      <ThreeGlobe />
+      <ThreeGlobe articles={articles} />
       <SearchBar onResults={handleSearchResults} />
       {currentArticles.map((article, index) => (
         <Article key={index} article={article} />
