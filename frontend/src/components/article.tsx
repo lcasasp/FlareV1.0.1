@@ -5,6 +5,7 @@ interface ArticleProps {
   article: {
     title: string;
     body: string;
+    sentiment: string;
     url: string;
     image: string;
   };
@@ -13,6 +14,15 @@ interface ArticleProps {
 const Article: React.FC<ArticleProps> = ({ article }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { x, y, rotateX, rotateY } = useMousePosition(cardRef);
+
+  const shortenBody = (body: string) => {
+    const words = body.split(/\s+/);
+    if (words.length <= 200) {
+      return body; 
+    } else {
+      return words.slice(0, 200).join(' ') + '...'; 
+    }
+  };
 
   return (
     <div
@@ -26,8 +36,9 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
       } as React.CSSProperties}
     >
       <h3 className="text-xl font-semibold mb-2 w-full">{article.title}</h3>
+      <h3 className="text-sm font-semibold mb-2" style={{ color: '#064273' }}>Sentiment: {Number(article.sentiment).toFixed(2)}</h3>
       {article.image && <img src={article.image} alt="Article" className="article-image float-left mr-4 mb-4" />}
-        <p className="text-gray-600">{article.body}</p>
+        <p className="text-gray-600">{shortenBody(article.body)+'...'}</p>
         <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-500">Read more</a>
     </div>
   );

@@ -9,6 +9,7 @@ import Pagination from "../components/pagination";
 interface Article {
   title: string;
   body: string;
+  sentiment: string;
   url: string;
   image: string;
 }
