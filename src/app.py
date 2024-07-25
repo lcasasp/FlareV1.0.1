@@ -30,7 +30,7 @@ def get_articles():
                 }
             }
         ],
-        "size": 100
+        "size": 1000
     })
     articles = [hit["_source"] for hit in result['hits']['hits']]
 
