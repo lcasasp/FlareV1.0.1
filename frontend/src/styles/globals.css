@@ -37,6 +37,6 @@ body {
 }
 
 .article-card:hover {
-  transform: perspective(1000px) rotateX(var(--rot-x)) rotateY(var(--rot-y)) scale(1.01);
-  background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(175, 252, 161, 0.23), transparent);
+  transform: perspective(1000px) rotateX(var(--rot-x)) rotateY(var(--rot-y)) scale(1.001);
+  background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(59, 174, 246, 0.3), transparent);
 }

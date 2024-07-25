@@ -12,6 +12,7 @@ interface Article {
   sentiment: string;
   url: string;
   image: string;
+  date: string;
   locations: {
     label: string;
     latitude: number;

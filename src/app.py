@@ -3,6 +3,7 @@ from elasticsearch import Elasticsearch
 from services import add_indexed_news
 from config import Config
 from flask_cors import CORS, cross_origin
+from datetime import datetime, timedelta
 import logging
 
 app = Flask(__name__)
@@ -18,39 +19,83 @@ es = Elasticsearch(
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
-
-    query = {
+    result = es.search(index="news", body={
         "query": {
-            "match_all": {}  # Match all documents
+            "match_all": {}
         },
-        "size": 1000
-    }
-
-    result = es.search(index="news", body=query)
+        "sort": [
+            {
+                "relevance": {
+                    "order": "desc"
+                }
+            }
+        ],
+        "size": 100
+    })
     articles = [hit["_source"] for hit in result['hits']['hits']]
 
     return jsonify(articles)
 
-
-@app.route('/search')
+@app.route('/search', methods=['GET'])
 def search_news():
     query = request.args.get('query', default="*", type=str)
     logging.debug(f"Received query: {query}")
-
+    
+    current_date = datetime.now().strftime('%Y-%m-%d')
     search_body = {
         "query": {
-            "multi_match": {  # Use multi_match to search across multiple fields
-                "query": query,
-                # Adjust fields according to your data model
-                "fields": ["title", "body"]
-            },
+            "function_score": {
+                "query": {
+                    "bool": {
+                        "should": [
+                            {
+                                "multi_match": {
+                                    "query": query,
+                                    "fields": ["title^3", "body", "concepts.label^3"],
+                                    "type": "cross_fields",
+                                    "operator": "and"
+                                }
+                            }
+                        ],
+                        "filter": [
+                            {
+                                "range": {
+                                    "date": {
+                                        "gte": "now-30d/d"  # Adjust this as necessary for date range
+                                    }
+                                }
+                            }
+                        ]
+                    }
+                },
+                "functions": [
+                    {
+                        "field_value_factor": {
+                            "field": "relevance",
+                            "modifier": "log1p",
+                            "factor": 0.1  # Adjust the factor based on how much you want to boost by relevance
+                        }
+                    },
+                    {
+                        "gauss": {
+                            "date": {
+                                "origin": current_date,
+                                "scale": "7d",
+                                "offset": "1d",
+                                "decay": 0.9  # Adjust decay to manage the drop-off rate
+                            }
+                        }
+                    }
+                ],
+                "score_mode": "sum",  # Combines scores of all functions
+                "boost_mode": "sum"   # Combines function scores with query score
+            }
         },
         "size": 1000
     }
 
     search_result = es.search(index="news", body=search_body)
-    logging.debug(f"Search results: {search_result}")
-    return jsonify(search_result['hits']['hits'])
+    return search_result['hits']['hits']
 
 
 @app.route('/fetch')
