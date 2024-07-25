@@ -13,6 +13,10 @@ interface Article {
   url: string;
   image: string;
   date: string;
+  concepts: {
+    label: string;
+    score: number;
+  }[];
   locations: {
     label: string;
     latitude: number;
@@ -24,12 +28,14 @@ const ITEMS_PER_PAGE = 10;
 
 const Home: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
+  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchArticles = async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
     setArticles(response.data);
+    setFilteredArticles(response.data);
     setTotalPages(Math.ceil(response.data.length / ITEMS_PER_PAGE));
   };
 
@@ -39,8 +45,41 @@ const Home: React.FC = () => {
     );
     const searchResults = response.data.map((result: any) => result._source);
     setArticles(searchResults);
+    setFilteredArticles(searchResults);
     setCurrentPage(1); // Reset to the first page on new search results
     setTotalPages(Math.ceil(searchResults.length / ITEMS_PER_PAGE));
+  };
+  
+  const handleFilterChange = (filters: any) => {
+    let filtered = articles;
+
+    if (filters.location && filters.location !== "Any") {
+      filtered = filtered.filter(article => 
+        article.locations.some(location => location.label === filters.location)
+      );
+    }
+
+    if (filters.concept && filters.concept !== "Any") {
+      filtered = filtered.filter(article => 
+        article.concepts.some(concept => concept.label === filters.concept)
+      );
+    }
+
+    if (filters.location === "Any" && filters.concept === "Any") {
+      filtered = articles;
+    } else if (filters.location === "Any" && filters.concept !== "Any") {
+      filtered = filtered.filter(article =>
+        article.concepts.some(concept => concept.label === filters.concept)
+      );
+    } else if (filters.location !== "Any" && filters.concept === "Any") {
+      filtered = filtered.filter(article =>
+        article.locations.some(location => location.label === filters.location)
+      );
+    }
+
+    setFilteredArticles(filtered);
+    setCurrentPage(1); // Reset to the first page on filter change
+    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
 
   useEffect(() => {
@@ -48,7 +87,7 @@ const Home: React.FC = () => {
   }, []);
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const currentArticles = articles.slice(
+  const currentArticles = filteredArticles.slice(
     startIndex,
     startIndex + ITEMS_PER_PAGE
   );
@@ -57,11 +96,14 @@ const Home: React.FC = () => {
     setCurrentPage(page);
   };
 
+  const availableConcepts = Array.from(new Set(articles.flatMap((article) => article.concepts.map((concept) => concept.label))));
+  const availableLocations = Array.from(new Set(articles.flatMap((article) => article.locations.map((location) => location.label))));
+
   return (
     <div className="container mx-auto p-4">
       <Header />
-      <ThreeGlobe articles={articles} />
-      <SearchBar onResults={handleSearchResults} />
+      <ThreeGlobe articles={filteredArticles} />
+      <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
       {currentArticles.map((article, index) => (
         <Article key={index} article={article} />
       ))}

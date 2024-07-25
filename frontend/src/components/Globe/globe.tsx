@@ -5,14 +5,6 @@ import gsap from "gsap";
 import getStarfield from "./src/getStarfield";
 import { getFresnelMat } from "./src/getFresnelMat";
 
-// Example locations data
-// const locations = [
-//   { label: 'New York', latitude: 40.7128, longitude: -74.0060 },
-//   { label: 'London', latitude: 51.5074, longitude: -0.1278 },
-//   { label: 'Tokyo', latitude: 35.6895, longitude: 139.6917 },
-//   { label: 'Sydney', latitude: -33.8688, longitude: 151.2093 },
-// ];
-
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 

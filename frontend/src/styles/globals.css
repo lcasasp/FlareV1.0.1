@@ -32,8 +32,8 @@ body {
   float: left;
   margin-right: 1rem;
   margin-bottom: 1rem;
-  max-width: 150px; /* Adjust as needed */
-  max-height: 150px; /* Adjust as needed */
+  max-width: 200px; /* Adjust as needed */
+  max-height: 200px; /* Adjust as needed */
 }
 
 .article-card:hover {
