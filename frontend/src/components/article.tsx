@@ -5,7 +5,7 @@ interface ArticleProps {
   article: {
     title: string;
     body: string;
-    sentiment: string;
+    sentiment: number;
     url: string;
     image: string;
     date: string;
@@ -51,7 +51,7 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
     >
       <h3 className="text-xl font-semibold mb-2 w-full">{article.title}</h3>
       <p className="text-gray-600 text-sm mb-2">{formattedDate}</p>
-      <h3 className="text-sm font-semibold mb-2" style={{ color: '#064273' }}>Sentiment: {Number(article.sentiment).toFixed(2)}</h3>
+      <h3 className="text-sm font-semibold mb-2" style={{ color: '#064273' }}>Sentiment: {article.sentiment.toFixed(2)}</h3>
       {article.image && <img src={article.image} alt="Article" className="article-image float-left mr-4 mb-4" />}
         <p className="text-gray-600">{shortenBody(article.body)+'...'}</p>
         <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-500">Read more</a>

@@ -9,7 +9,7 @@ import Pagination from "../components/pagination";
 interface Article {
   title: string;
   body: string;
-  sentiment: string;
+  sentiment: number;
   url: string;
   image: string;
   date: string;
@@ -31,6 +31,7 @@ const Home: React.FC = () => {
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [sortBy, setSortBy] = useState<string>('None');
 
   const fetchArticles = async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
@@ -82,6 +83,33 @@ const Home: React.FC = () => {
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
 
+  const handleSortChange = (sortCriteria: string) => {
+    if (sortCriteria === 'None') {
+      return;
+    }
+    setSortBy(sortCriteria);
+    let sortedArticles = [...filteredArticles];
+
+    switch (sortCriteria) {
+      case 'date':
+        sortedArticles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        break;
+      case 'sentiment':
+        sortedArticles.sort((a, b) => b.sentiment - a.sentiment);
+        break;
+      case 'date-desc':
+        sortedArticles.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        break;
+      case 'sentiment-desc':
+        sortedArticles.sort((a, b) => a.sentiment - b.sentiment);
+        break;
+      default:
+        break;
+    }
+
+    setFilteredArticles(sortedArticles);
+  };
+
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -103,7 +131,7 @@ const Home: React.FC = () => {
     <div className="container mx-auto p-4">
       <Header />
       <ThreeGlobe articles={filteredArticles} />
-      <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
+      <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} onSortChange={handleSortChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
       {currentArticles.map((article, index) => (
         <Article key={index} article={article} />
       ))}
