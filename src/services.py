@@ -2,8 +2,8 @@ import requests
 from elasticsearch import Elasticsearch
 from config import Config
 import logging
-import eventregistry
 from eventregistry import *
+import hashlib
 
 er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
 
@@ -18,7 +18,7 @@ def fetch_news():
                           sourceGroupUri=None,
                           authorUri=None,
                           locationUri=None,
-                          lang=None,
+                          lang="eng",
                           dateStart=None,
                           dateEnd=None,
                           dateMentionStart=None,
@@ -34,11 +34,11 @@ def fetch_news():
                           ignoreLocationUri=None,
                           ignoreLang=None,
                           ignoreKeywordsLoc="body",
-                          isDuplicateFilter="keepAll",
-                          hasDuplicateFilter="keepAll",
+                          isDuplicateFilter="skipDuplicates",
+                          hasDuplicateFilter="skipDuplicates",
                           eventFilter="keepAll",
                           startSourceRankPercentile=0,
-                          endSourceRankPercentile=100,
+                          endSourceRankPercentile=40,
                           minSentiment=-1,
                           maxSentiment=1,
                           dataType="news",
@@ -68,6 +68,7 @@ def extract_and_prepare_news_data(news_api_response):
             "source_title": article.get('source', {}).get('title'),
             "image": article.get('image'),
             "sentiment": article.get('sentiment'),
+            "relevance": article.get('relevance'),
             # "truthfulness": MEDIA VALIDATOR HERE!!!
             "concepts": [
                 {"uri": concept.get('uri'), 
@@ -98,22 +99,8 @@ def add_indexed_news():
     articles = extract_and_prepare_news_data(news_api_response)
 
     for article in articles:
-        # Search for an existing article with the same title
-        search_query = {
-            "query": {
-                "match": {
-                    "title": article["title"]
-                }
-            }
-        }
-        search_result = es.search(index="news", body=search_query)
-        if search_result['hits']['total']['value'] == 0:
-            # If no existing article with the same title, index the new article
-            logging.debug(f"Indexing article: {article}")
-            if not es.indices.exists(index="news"):
-                es.indices.create(index="news", ignore=400)
-            es.index(index="news", body=article)
-        else:
-            logging.debug(f"Skipping duplicate article: {article['title']}")
+        if not es.indices.exists(index="news"):
+            es.indices.create(index="news", ignore=400)
+        es.index(index="news", body=article)
 
     return articles

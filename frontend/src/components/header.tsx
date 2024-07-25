@@ -10,8 +10,6 @@ const Header: React.FC = () => {
         </div>
         <nav className="flex items-center">
           <a href="/" className="text-gray-700 px-4">About</a>
-          <a href="/" className="text-gray-700 px-4">Page</a>
-          <a href="/" className="text-gray-700 px-4">Page</a>
           <button className="bg-black text-white px-4 py-2 rounded">Button</button>
         </nav>
       </div>

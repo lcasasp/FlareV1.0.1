@@ -8,6 +8,7 @@ interface ArticleProps {
     sentiment: string;
     url: string;
     image: string;
+    date: string;
     locations: {
       label: string;
       latitude: number;
@@ -29,6 +30,14 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
     }
   };
 
+  const formattedDate = new Date(article.date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+  });
+
   return (
     <div
       ref={cardRef}
@@ -41,12 +50,13 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
       } as React.CSSProperties}
     >
       <h3 className="text-xl font-semibold mb-2 w-full">{article.title}</h3>
+      <p className="text-gray-600 text-sm mb-2">{formattedDate}</p>
       <h3 className="text-sm font-semibold mb-2" style={{ color: '#064273' }}>Sentiment: {Number(article.sentiment).toFixed(2)}</h3>
-      <p className="text-gray-600">{article.locations.map(location => location.label).join(', ')}</p>
       {article.image && <img src={article.image} alt="Article" className="article-image float-left mr-4 mb-4" />}
         <p className="text-gray-600">{shortenBody(article.body)+'...'}</p>
         <a href={article.url} target="_blank" rel="noopener noreferrer" className="text-blue-500">Read more</a>
     </div>
   );
 };
+
 export default Article;
