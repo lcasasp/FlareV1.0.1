@@ -12,10 +12,16 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
   const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(null);
-  const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string } | null>(null);
+  const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    // Clear previous markers and reset hovered marker
+    markerRefs.current.forEach(marker => marker.parent?.remove(marker));
+    markerRefs.current = [];
+    setHoveredMarker(null);
+    setHoveredInfo(null);
+
     const w = mountRef.current?.clientWidth || window.innerWidth;
     const h = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
@@ -125,7 +131,8 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           setHoveredMarker(intersectedMarker);
           setHoveredInfo({
             title: intersectedMarker.userData.title,
-            image: intersectedMarker.userData.image
+            image: intersectedMarker.userData.image,
+            url: intersectedMarker.userData.url,
           });
         }
       } else {

@@ -84,13 +84,13 @@ const Home: React.FC = () => {
   };
 
   const handleSortChange = (sortCriteria: string) => {
-    if (sortCriteria === 'None') {
-      return;
-    }
     setSortBy(sortCriteria);
     let sortedArticles = [...filteredArticles];
 
     switch (sortCriteria) {
+      case 'relevance':
+        sortedArticles = articles;
+        break;
       case 'date':
         sortedArticles.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         break;
