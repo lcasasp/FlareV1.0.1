@@ -15,61 +15,65 @@ es = Elasticsearch(
 )
 
 def fetch_events():
-    q = QueryEventsIter(conceptUri=QueryItems.OR(["http://en.wikipedia.org/wiki/Climate_change",
-                                    "http://en.wikipedia.org/wiki/Energy"]),
-                        categoryUri=QueryItems.OR(["dmoz/Business", "dmoz/Science", "dmoz/Technology", "dmoz/Environment", "dmoz/Politics"]),
-                        sourceUri = None,
-                        sourceLocationUri = None,
-                        sourceGroupUri = None,
-                        authorUri = None,
-                        locationUri = None,
-                        lang = "eng",
-                        dateStart = None,
-                        dateEnd = None,
-                        minArticlesInEvent = 1,
-                        maxArticlesInEvent = 10,
-                        #Only events in the last month
-                        dateMentionStart = datetime.now() - timedelta(days=30),
-                        dateMentionEnd = None,
-                        ignoreKeywords = None,
-                        ignoreConceptUri = None,
-                        ignoreCategoryUri = None,
-                        ignoreSourceUri = None,
-                        ignoreSourceLocationUri = None,
-                        ignoreSourceGroupUri = None,
-                        ignoreAuthorUri = None,
-                        ignoreLocationUri = None,
-                        ignoreLang = None,
-                        keywordsLoc = "body",
-                        ignoreKeywordsLoc = "body",
-                        requestedResult = None)
-    q.setRequestedResult(RequestEventsInfo(count=50,
-                                           returnInfo=ReturnInfo(eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True),
-                                                                  locationInfo=LocationInfoFlags(label=True, geoLocation=True),
-                                                                 )
-                                           )
-                       )
-    res = er.execQuery(q)
-    return res
+    er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
+    all_events = []
+
+    for curPage in range(1, 11):
+        q = QueryEventsIter(
+            conceptUri=QueryItems.OR(["http://en.wikipedia.org/wiki/Climate_change",
+                                      "http://en.wikipedia.org/wiki/Energy"]),
+            categoryUri=QueryItems.OR(["dmoz/Business", "dmoz/Science", "dmoz/Technology", "dmoz/Environment", "dmoz/Politics"]),
+            sourceUri=None,
+            sourceLocationUri=None,
+            sourceGroupUri=None,
+            authorUri=None,
+            locationUri=None,
+            lang="eng",
+            dateStart=None,
+            dateEnd=None,
+            minArticlesInEvent=1,
+            maxArticlesInEvent=10,
+            dateMentionStart=datetime.now() - timedelta(days=60),
+            dateMentionEnd=None,
+            ignoreKeywords=None,
+            ignoreConceptUri=None,
+            ignoreCategoryUri=None,
+            ignoreSourceUri=None,
+            ignoreSourceLocationUri=None,
+            ignoreSourceGroupUri=None,
+            ignoreAuthorUri=None,
+            ignoreLocationUri=None,
+            ignoreLang=None,
+            keywordsLoc="body",
+            ignoreKeywordsLoc="body",
+            requestedResult=RequestEventsInfo(count=50, page=curPage,
+                                              returnInfo=ReturnInfo(
+                                                  eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True),
+                                                  locationInfo=LocationInfoFlags(label=True, geoLocation=True)))
+        )
+
+        res = er.execQuery(q)
+        if res.get('events', {}).get('results'):
+            all_events.extend(res['events']['results'])
+
+    return all_events
 
 def extract_and_prepare_event_data(event_response):
-    events = event_response.get('events', {}).get('results', [])
     unique_articles = []
-    for event in events:
-        article_url = event['infoArticle'].get('eng', {}).get('url')
-        # Query Elasticsearch to check if the article URL already exists
+    for event in event_response:
+        uri = event['uri']
+        # Query Elasticsearch to check if the event URI already exists
         query = {
             "query": {
                 "term": {
-                    "infoArticle.eng.url.keyword": article_url
+                    "uri": uri
                 }
             }
         }
         result = es.search(index="events", body=query)
         if result['hits']['total']['value'] == 0:
             unique_articles.append(event)
-    events = unique_articles
-    return events
+    return unique_articles
     # prepared_events = []
 
     # for event in events:
