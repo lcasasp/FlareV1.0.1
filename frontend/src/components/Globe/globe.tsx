@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import gsap from "gsap";
@@ -7,6 +7,13 @@ import { getFresnelMat } from "./src/getFresnelMat";
 
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+  const markerRefs = useRef<THREE.Mesh[]>([]);
+  const rotationSpeedRef = useRef(0.0004);
+  const raycaster = useRef(new THREE.Raycaster());
+  const mouse = useRef(new THREE.Vector2());
+  const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(null);
+  const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string } | null>(null);
+  const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
     const w = mountRef.current?.clientWidth || window.innerWidth;
@@ -32,7 +39,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     controls.enableZoom = false;
 
     const loader = new THREE.TextureLoader();
-    const geometry = new THREE.SphereGeometry(1, 64, 64); // Use a standard sphere geometry
+    const geometry = new THREE.SphereGeometry(1, 64, 64);
     const material = new THREE.MeshPhongMaterial({
       map: loader.load("/textures/2k_earth_daymap.jpg"),
       specularMap: loader.load("/textures/2k_earth_specular_map.jpg"),
@@ -43,20 +50,19 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const earthMesh = new THREE.Mesh(geometry, material);
     earthGroup.add(earthMesh);
 
-    // Convert lat/lon to THREE.js coordinates
-    function latLongToVector3(lat: number, lon: number, radius = 1) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = (lon + 180) * (Math.PI / 180);
+    function latLongToVector3(lat: number, lon: number, radius = 1.02) {
+      const phi = (90 - lat) * (Math.PI / 180);
+      const theta = (lon + 180) * (Math.PI / 180);
 
-        return new THREE.Vector3(
-          -(radius * Math.sin(phi) * Math.cos(theta)),
-          radius * Math.cos(phi),
-          radius * Math.sin(phi) * Math.sin(theta)
-        );
+      return new THREE.Vector3(
+        -(radius * Math.sin(phi) * Math.cos(theta)),
+        radius * Math.cos(phi),
+        radius * Math.sin(phi) * Math.sin(theta)
+      );
     }
 
     articles.forEach((article) => {
-      article.locations.forEach((location: { latitude: number, longitude: number }) => {
+      article.locations.forEach((location: { label: string, latitude: number, longitude: number }, index: number) => {
         const { latitude, longitude } = location;
         const position = latLongToVector3(latitude, longitude);
         const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.2);
@@ -64,9 +70,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.position.copy(position);
         marker.lookAt(new THREE.Vector3(0, 0, 0));
-        marker.position.normalize().multiplyScalar(1);
+        marker.position.normalize().multiplyScalar(1.02); // Stick out from the sphere
+        marker.userData = { title: article.title, image: article.image, location: location.label };
+        markerRefs.current.push(marker);
         earthGroup.add(marker);
-
         gsap.to(marker.scale, { z: 1.5, duration: 2, repeat: -1, yoyo: true });
       });
     });
@@ -106,11 +113,25 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const animate = () => {
       requestAnimationFrame(animate);
 
-      const rotationSpeed = 0.0004;
+      earthGroup.rotation.y += rotationSpeedRef.current;
+      cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
+      stars.rotation.y -= rotationSpeedRef.current / 10;
 
-      earthGroup.rotation.y += rotationSpeed;
-      cloudsMesh.rotation.y += rotationSpeed / 3;
-      stars.rotation.y -= rotationSpeed / 10;
+      raycaster.current.setFromCamera(mouse.current, camera);
+      const intersects = raycaster.current.intersectObjects(markerRefs.current);
+      if (intersects.length > 0) {
+        const intersectedMarker = intersects[0].object;
+        if (intersectedMarker !== hoveredMarker) {
+          setHoveredMarker(intersectedMarker);
+          setHoveredInfo({
+            title: intersectedMarker.userData.title,
+            image: intersectedMarker.userData.image
+          });
+        }
+      } else {
+        setHoveredMarker(null);
+        setHoveredInfo(null);
+      }
 
       renderer.render(scene, camera);
     };
@@ -126,13 +147,72 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     };
     window.addEventListener("resize", handleWindowResize, false);
 
+    const handleMouseEnter = () => {
+      rotationSpeedRef.current = 0;
+    };
+
+    const handleMouseLeave = () => {
+      rotationSpeedRef.current = 0.0004;
+      setHoveredInfo(null);
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (mountRef.current) {
+        const bounds = mountRef.current.getBoundingClientRect();
+        mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+        mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+        setInfoWindowPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+      }
+    };
+
+    renderer.domElement.addEventListener('mouseenter', handleMouseEnter, false);
+    renderer.domElement.addEventListener('mouseleave', handleMouseLeave, false);
+    renderer.domElement.addEventListener('mousemove', handleMouseMove, false);
+
     return () => {
       window.removeEventListener('resize', handleWindowResize);
+      renderer.domElement.removeEventListener('mouseenter', handleMouseEnter);
+      renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
+      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, [articles]);
 
-  return <div ref={mountRef} className="background-globe" />;
+  return (
+    <div ref={mountRef} className="background-globe">
+      {hoveredInfo && (
+        <div
+          className="info-window"
+          style={{ top: infoWindowPosition.y, left: infoWindowPosition.x }}
+        >
+          <h3>{hoveredInfo.title}</h3>
+          <img src={hoveredInfo.image} alt={hoveredInfo.title} />
+        </div>
+      )}
+      <style jsx>{`
+        .info-window {
+          position: absolute;
+          background: rgba(0, 0, 0, 0.7);
+          color: #fff;
+          padding: 10px;
+          border-radius: 8px;
+          box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+          pointer-events: none;
+          max-width: 200px;
+        }
+
+        .info-window h3 {
+          margin: 0 0 5px;
+          font-size: 16px;
+        }
+
+        .info-window img {
+          width: 100%;
+          border-radius: 4px;
+        }
+      `}</style>
+    </div>
+  );
 };
 
 export default ThreeGlobe;
