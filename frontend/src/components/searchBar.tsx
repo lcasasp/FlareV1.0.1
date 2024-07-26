@@ -173,7 +173,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             onChange={handleSortChange}
             className="p-2 border rounded"
           >
-            <option value="None">None</option>
+            <option value="relevance">Most Relevant</option>
             <option value="date">Date (Newest)</option>
             <option value="date-desc">Date (Oldest)</option>
             <option value="sentiment">Sentiment (Most Negative)</option>
