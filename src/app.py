@@ -61,7 +61,7 @@ def search_events():
                             {
                                 "range": {
                                     "date": {
-                                        "gte": "now-30d/d"  # Adjust this as necessary for date range
+                                        "gte": "now-30d/d"  # Adjust this for date range
                                     }
                                 }
                             }
@@ -73,7 +73,7 @@ def search_events():
                         "field_value_factor": {
                             "field": "relevance",
                             "modifier": "log1p",
-                            "factor": 0.1  # Adjust the factor based on how much you want to boost by relevance
+                            "factor": 0.1  # Adjust to boost by relevance
                         }
                     },
                     {

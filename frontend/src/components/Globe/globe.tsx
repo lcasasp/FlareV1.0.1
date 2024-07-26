@@ -5,6 +5,23 @@ import gsap from "gsap";
 import getStarfield from "./src/getStarfield";
 import { getFresnelMat } from "./src/getFresnelMat";
 
+interface Event {
+  mainLocation: {
+    label: string;
+    latitude: number;
+    longitude: number;
+  } | null;
+  locations: {
+    label: string;
+    latitude: number;
+    longitude: number;
+  }[];
+}
+
+interface Props {
+  articles: Event[];
+}
+
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const markerRefs = useRef<THREE.Mesh[]>([]);
@@ -57,8 +74,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     earthGroup.add(earthMesh);
 
     function latLongToVector3(lat: number, lon: number, radius = 1.02) {
+      const lonOffset = (Math.random() - 0.5) * 3; // Random offset between -1.5 to 1.5 degrees
       const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lon + 180) * (Math.PI / 180);
+      const theta = (lon + lonOffset + 180) * (Math.PI / 180);
 
       return new THREE.Vector3(
         -(radius * Math.sin(phi) * Math.cos(theta)),
@@ -68,19 +86,32 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     }
 
     articles.forEach((article) => {
-      article.locations.forEach((location: { label: string, latitude: number, longitude: number }, index: number) => {
-        const { latitude, longitude } = location;
-        const position = latLongToVector3(latitude, longitude);
+      // Process main location
+      if (article.mainLocation) {
+        const position = latLongToVector3(article.mainLocation.latitude, article.mainLocation.longitude);
+        const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.3); 
+        const mainMarkerMaterial = new THREE.MeshBasicMaterial({ color: "#800080", transparent: true, opacity: 0.8 });
+        const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
+        mainMarker.position.copy(position);
+        mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
+        mainMarker.position.normalize().multiplyScalar(1.02);
+        mainMarker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
+        earthGroup.add(mainMarker);
+        markerRefs.current.push(mainMarker);
+      }
+    
+      // Process secondary concept locations
+      article.locations.forEach((location: { latitude: number; longitude: number; }) => {
+        const position = latLongToVector3(location.latitude, location.longitude);
         const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.2);
         const markerMaterial = new THREE.MeshBasicMaterial({ color: "#3CD2F9", transparent: true, opacity: 0.5 });
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.position.copy(position);
         marker.lookAt(new THREE.Vector3(0, 0, 0));
-        marker.position.normalize().multiplyScalar(1.02); // Stick out from the sphere
-        marker.userData = { title: article.title, image: article.image, location: location.label };
-        markerRefs.current.push(marker);
+        marker.position.normalize().multiplyScalar(1.02);
+        marker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
         earthGroup.add(marker);
-        gsap.to(marker.scale, { z: 1.5, duration: 2, repeat: -1, yoyo: true });
+        markerRefs.current.push(marker);
       });
     });
 
