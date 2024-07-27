@@ -5,22 +5,15 @@ import gsap from "gsap";
 import getStarfield from "./src/getStarfield";
 import { getFresnelMat } from "./src/getFresnelMat";
 
-interface Event {
-  mainLocation: {
-    label: string;
-    latitude: number;
-    longitude: number;
-  } | null;
-  locations: {
-    label: string;
-    latitude: number;
-    longitude: number;
-  }[];
-}
+const getSentimentColor = (sentiment: number) => {
+  const color = new THREE.Color();
+  const power = 1.5;
+  // Normalize sentiment from [-1, 1] to [0, 1], with a bias towards negative
+  const normalized = Math.pow((sentiment + 1) / 2, sentiment < 0 ? power : 1);
+  color.lerpColors(new THREE.Color(1, 0, 0), new THREE.Color(0, 1, 0), normalized);
+  return color;
+};
 
-interface Props {
-  articles: Event[];
-}
 
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -31,6 +24,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(null);
   const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
+  
 
   useEffect(() => {
     // Clear previous markers and reset hovered marker
@@ -89,8 +83,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       // Process main location
       if (article.mainLocation) {
         const position = latLongToVector3(article.mainLocation.latitude, article.mainLocation.longitude);
-        const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.3); 
-        const mainMarkerMaterial = new THREE.MeshBasicMaterial({ color: "#800080", transparent: true, opacity: 0.8 });
+        const sentimentColor = getSentimentColor(article.sentiment);
+        const mainMarkerMaterial = new THREE.MeshBasicMaterial({ color: sentimentColor, transparent: true, opacity: 0.8 });
+        const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.3);
         const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
         mainMarker.position.copy(position);
         mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
@@ -98,12 +93,13 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         mainMarker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
         earthGroup.add(mainMarker);
         markerRefs.current.push(mainMarker);
+        gsap.to(mainMarker.scale, { z: 1.2, duration: 2, repeat: -1, yoyo: true });
       }
     
       // Process secondary concept locations
       article.locations.forEach((location: { latitude: number; longitude: number; }) => {
         const position = latLongToVector3(location.latitude, location.longitude);
-        const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.2);
+        const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.1);
         const markerMaterial = new THREE.MeshBasicMaterial({ color: "#3CD2F9", transparent: true, opacity: 0.5 });
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.position.copy(position);
@@ -112,8 +108,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         marker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
         earthGroup.add(marker);
         markerRefs.current.push(marker);
+        gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
       });
     });
+
 
     const lightsMat = new THREE.MeshBasicMaterial({
       map: loader.load("/textures/2k_earth_nightmap.jpg"),
@@ -147,6 +145,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
 
+
     const animate = () => {
       requestAnimationFrame(animate);
 
@@ -176,6 +175,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     animate();
 
+
     const handleWindowResize = () => {
       const newWidth = mountRef.current?.clientWidth || window.innerWidth;
       const newHeight = mountRef.current?.clientHeight || window.innerHeight;
@@ -203,6 +203,19 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
     };
 
+    const handleClick = (event: MouseEvent) => {
+      raycaster.current.setFromCamera(mouse.current, camera);
+      const intersects = raycaster.current.intersectObjects(markerRefs.current);
+      if (intersects.length > 0) {
+        const intersectedMarker = intersects[0].object;
+        const url = intersectedMarker.userData.url;
+        if (url) {
+          window.open(url, "_blank");
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener('click', handleClick, false);
     renderer.domElement.addEventListener('mouseenter', handleMouseEnter, false);
     renderer.domElement.addEventListener('mouseleave', handleMouseLeave, false);
     renderer.domElement.addEventListener('mousemove', handleMouseMove, false);

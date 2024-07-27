@@ -176,8 +176,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             <option value="relevance">Most Relevant</option>
             <option value="date">Date (Newest)</option>
             <option value="date-desc">Date (Oldest)</option>
-            <option value="sentiment">Sentiment (Most Negative)</option>
-            <option value="sentiment-desc">Sentiment (Most Positive)</option>
+            <option value="sentiment">Sentiment (Most Positive)</option>
+            <option value="sentiment-desc">Sentiment (Most Negative)</option>
           </select>
         </div>
       </div>

@@ -10,9 +10,11 @@ interface ArticleProps {
     image: string;
     eventDate: string;
     concepts: {
-      label: string;
+      label: 
+      {
+        eng: string;
+      };
       type: string;
-      score: number;
     }[];
     mainLocation: {
       label: string;
