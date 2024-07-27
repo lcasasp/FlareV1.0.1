@@ -18,7 +18,7 @@ def fetch_events():
     er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
     all_events = []
 
-    for curPage in range(1, 11):
+    for curPage in range(1, 5):
         q = QueryEventsIter(
             conceptUri=QueryItems.OR(["http://en.wikipedia.org/wiki/Climate_change",
                                       "http://en.wikipedia.org/wiki/Energy"]),
@@ -33,7 +33,7 @@ def fetch_events():
             dateEnd=None,
             minArticlesInEvent=1,
             maxArticlesInEvent=10,
-            dateMentionStart=datetime.now() - timedelta(days=60),
+            dateMentionStart=datetime.now() - timedelta(days=1),
             dateMentionEnd=None,
             ignoreKeywords=None,
             ignoreConceptUri=None,
@@ -61,12 +61,12 @@ def fetch_events():
 def extract_and_prepare_event_data(event_response):
     unique_articles = []
     for event in event_response:
-        uri = event['uri']
-        # Query Elasticsearch to check if the event URI already exists
+        article_url = event['infoArticle']['eng']['url']
+        # Query Elasticsearch to check if the article URL already exists
         query = {
             "query": {
                 "term": {
-                    "uri": uri
+                    "infoArticle.eng.url.keyword": article_url
                 }
             }
         }

@@ -14,9 +14,10 @@ interface Article {
   image: string;
   eventDate: string;
   concepts: {
-    label: string;
+    label: {
+      eng: string;
+    };
     type: string;
-    score: number;
   }[];
   mainLocation: {
     label: string;
@@ -106,7 +107,7 @@ const Home: React.FC = () => {
 
     if (filters.concept && filters.concept !== "Any") {
       filtered = filtered.filter(article => 
-        article.concepts.some(concept => concept.label === filters.concept)
+        article.concepts.some(concept => concept.label.eng === filters.concept)
       );
     }
 
@@ -114,7 +115,7 @@ const Home: React.FC = () => {
       filtered = articles;
     } else if (filters.location === "Any" && filters.concept !== "Any") {
       filtered = filtered.filter(article =>
-        article.concepts.some(concept => concept.label === filters.concept)
+        article.concepts.some(concept => concept.label.eng === filters.concept)
       );
     } else if (filters.location !== "Any" && filters.concept === "Any") {
       filtered = filtered.filter(article =>
@@ -169,7 +170,7 @@ const Home: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const availableConcepts = Array.from(new Set(["Any", ...articles.flatMap((article) => article.concepts.map((concept) => concept.label))]));
+  const availableConcepts = Array.from(new Set(["Any", ...articles.flatMap((article) => article.concepts.map((concept) => concept.label.eng))]));
   const availableLocations = Array.from(new Set(["Any", ...articles.flatMap((article) => article.locations.map((location) => location.label)), ...articles.flatMap((article) => article.mainLocation ? [article.mainLocation.label] : [])]));
 
   return (
