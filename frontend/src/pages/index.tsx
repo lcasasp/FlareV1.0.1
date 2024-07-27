@@ -5,6 +5,7 @@ import Article from "../components/article";
 import ThreeGlobe from "../components/Globe/globe";
 import SearchBar from "../components/searchBar";
 import Pagination from "../components/pagination";
+import Headlines from "@/components/headlines";
 
 interface Article {
   title: string;
@@ -176,6 +177,7 @@ const Home: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <Header />
+      <Headlines articles={filteredArticles}/>
       <ThreeGlobe articles={filteredArticles} />
       <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} onSortChange={handleSortChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
       {currentArticles.map((article, index) => (

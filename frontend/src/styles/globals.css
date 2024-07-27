@@ -40,3 +40,35 @@ body {
   transform: perspective(1000px) rotateX(var(--rot-x)) rotateY(var(--rot-y)) scale(1.001);
   background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(59, 174, 246, 0.3), transparent);
 }
+
+.news-headline-system .conveyor-belt {
+  display: flex;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  padding: 10px;
+}
+
+.news-headline-system .conveyor-belt .article {
+  min-width: 200px;
+  margin-right: 10px;
+  text-align: center;
+}
+
+.news-headline-system .categories {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.news-headline-system .categories button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  background-color: #ccc;
+  cursor: pointer;
+}
+
+.news-headline-system .categories .active {
+  background-color: #007bff;
+  color: white;
+}
