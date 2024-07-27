@@ -4,9 +4,135 @@ from config import Config
 import logging
 from eventregistry import *
 import hashlib
+from datetime import datetime, timedelta
 
 er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
 
+es = Elasticsearch(
+    ["http://localhost:9200"],
+    basic_auth=('elastic', Config.ELASTIC_PW),
+    verify_certs=False,
+)
+
+def fetch_events():
+    er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
+    all_events = []
+
+    for curPage in range(1, 5):
+        q = QueryEventsIter(
+            conceptUri=QueryItems.OR(["http://en.wikipedia.org/wiki/Climate_change",
+                                      "http://en.wikipedia.org/wiki/Energy"]),
+            categoryUri=QueryItems.OR(["dmoz/Business", "dmoz/Science", "dmoz/Technology", "dmoz/Environment", "dmoz/Politics"]),
+            sourceUri=None,
+            sourceLocationUri=None,
+            sourceGroupUri=None,
+            authorUri=None,
+            locationUri=None,
+            lang="eng",
+            dateStart=None,
+            dateEnd=None,
+            minArticlesInEvent=1,
+            maxArticlesInEvent=10,
+            dateMentionStart=datetime.now() - timedelta(days=1),
+            dateMentionEnd=None,
+            ignoreKeywords=None,
+            ignoreConceptUri=None,
+            ignoreCategoryUri=None,
+            ignoreSourceUri=None,
+            ignoreSourceLocationUri=None,
+            ignoreSourceGroupUri=None,
+            ignoreAuthorUri=None,
+            ignoreLocationUri=None,
+            ignoreLang=None,
+            keywordsLoc="body",
+            ignoreKeywordsLoc="body",
+            requestedResult=RequestEventsInfo(count=50, page=curPage,
+                                              returnInfo=ReturnInfo(
+                                                  eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True),
+                                                  locationInfo=LocationInfoFlags(label=True, geoLocation=True)))
+        )
+
+        res = er.execQuery(q)
+        if res.get('events', {}).get('results'):
+            all_events.extend(res['events']['results'])
+
+    return all_events
+
+def extract_and_prepare_event_data(event_response):
+    unique_articles = []
+    for event in event_response:
+        article_url = event['infoArticle']['eng']['url']
+        # Query Elasticsearch to check if the article URL already exists
+        query = {
+            "query": {
+                "term": {
+                    "infoArticle.eng.url.keyword": article_url
+                }
+            }
+        }
+        result = es.search(index="events", body=query)
+        if result['hits']['total']['value'] == 0:
+            unique_articles.append(event)
+    return unique_articles
+    # prepared_events = []
+
+    # for event in events:
+    #     event_data = {
+    #         "uri": event.get('uri'),
+    #         "date": event.get('eventDate'),
+    #         "title": event['title'].get('eng', ''),
+    #         "summary": event['summary'].get('eng', ''),
+    #         "image": event.get('images', [])[0] if event.get('images') else '',
+    #         "sentiment": event.get('sentiment'),
+    #         "relevance": event.get('relevance'),
+    #         "totalArticleCount": event.get('totalArticleCount'),
+    #         "location": {
+    #             "label": event.get('location', {}).get('label', {}).get('eng', ''),
+    #             "country": event.get('location', {}).get('country', {}).get('label', {}).get('eng', ''),
+    #             "latitude": float(event.get('location', {}).get('lat', 0)),
+    #             "longitude": float(event.get('location', {}).get('long', 0))
+    #         },
+    #         "concepts": [],
+    #         "con-locations": []
+    #     }
+
+    #     for concept in event.get('concepts', []):
+    #         concept_data = {
+    #             "uri": concept.get('uri'),
+    #             "label": concept.get('label', {}).get('eng', ''),
+    #             "score": concept.get('score'),
+    #             "type": concept.get('type')
+    #         }
+    #         if concept.get('type') == 'loc' and concept.get('score') > 60:
+    #             if 'location' in concept:
+    #                 concept_location = {
+    #                     "label": concept.get('label', {}).get('eng', ''),
+    #                     "country": concept.get('location', {}).get('country', {}).get('label', {}).get('eng', ''),
+    #                     "latitude": float(concept.get('location', {}).get('lat', 0)),
+    #                     "longitude": float(concept.get('location', {}).get('long', 0))
+    #                 }
+    #                 event_data['con-locations'].append(concept_location) 
+    #         else:
+    #             event_data['concepts'].append(concept_data)
+
+    #     prepared_events.append(event_data)
+
+    # return prepared_events
+
+def add_indexed_events():
+    event_api_response = fetch_events()
+    events = extract_and_prepare_event_data(event_api_response)
+
+    for event in events:
+        if not es.indices.exists(index="events"):
+            es.indices.create(index="events", ignore=400)
+        es.index(index="events", body=event)
+
+    return events
+
+
+# These function are not used in the current version of the application
+######################################################################
 
 def fetch_news():
     q = QueryArticlesIter(keywords=None,
@@ -52,7 +178,6 @@ def fetch_news():
     res = er.execQuery(q)
     return res
 
-
 def extract_and_prepare_news_data(news_api_response):
     articles = news_api_response.get('articles', {}).get('results', [])
     prepared_articles = []
@@ -88,14 +213,13 @@ def extract_and_prepare_news_data(news_api_response):
         prepared_articles.append(prepared_article)
     return prepared_articles
 
-
 def add_indexed_news():
     es = Elasticsearch(
         ["http://localhost:9200"],
         basic_auth=('elastic', Config.ELASTIC_PW),
         verify_certs=False,
     )
-    news_api_response = fetch_news()
+    news_api_response = fetch_events()
     articles = extract_and_prepare_news_data(news_api_response)
 
     for article in articles:

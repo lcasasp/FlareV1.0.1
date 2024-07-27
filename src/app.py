@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
-from services import add_indexed_news
+from services import add_indexed_news, add_indexed_events
 from config import Config
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ es = Elasticsearch(
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
-    result = es.search(index="news", body={
+    result = es.search(index="events", body={
         "query": {
             "match_all": {}
         },
@@ -37,7 +37,7 @@ def get_articles():
     return jsonify(articles)
 
 @app.route('/search', methods=['GET'])
-def search_news():
+def search_events():
     query = request.args.get('query', default="*", type=str)
     logging.debug(f"Received query: {query}")
     
@@ -61,7 +61,7 @@ def search_news():
                             {
                                 "range": {
                                     "date": {
-                                        "gte": "now-30d/d"  # Adjust this as necessary for date range
+                                        "gte": "now-30d/d"  # Adjust this for date range
                                     }
                                 }
                             }
@@ -73,7 +73,7 @@ def search_news():
                         "field_value_factor": {
                             "field": "relevance",
                             "modifier": "log1p",
-                            "factor": 0.1  # Adjust the factor based on how much you want to boost by relevance
+                            "factor": 0.1  # Adjust to boost by relevance
                         }
                     },
                     {
@@ -94,27 +94,27 @@ def search_news():
         "size": 1000
     }
 
-    search_result = es.search(index="news", body=search_body)
+    search_result = es.search(index="events", body=search_body)
     return search_result['hits']['hits']
 
 
 @app.route('/fetch')
-def fetch_and_index_news():
-    if not es.indices.exists(index="news"):
-        es.indices.create(index="news", ignore=400)
-    articles = add_indexed_news()
+def fetch_and_index_events():
+    if not es.indices.exists(index="events"):
+        es.indices.create(index="events", ignore=400)
+    articles = add_indexed_events()
     return articles
 
 
 @app.route('/es-index')
 def create_es_index():
-    if not es.indices.exists(index="news"):
-        es.indices.create(index="news", ignore=400)
+    if not es.indices.exists(index="events"):
+        es.indices.create(index="events", ignore=400)
     return jsonify({"message": Config.ELASTIC_PW})
 
 @app.route('/delete_index', methods=['DELETE'])
 def delete_index():
-    index_name = 'news'
+    index_name = 'events'
     try:
         if es.indices.exists(index=index_name):
             response = es.indices.delete(index=index_name)
