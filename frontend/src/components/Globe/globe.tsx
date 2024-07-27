@@ -67,6 +67,12 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const earthMesh = new THREE.Mesh(geometry, material);
     earthGroup.add(earthMesh);
 
+    const barrierGeometry = new THREE.SphereGeometry(1.2, 64, 64); 
+    const barrierMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.0, transparent: true });
+    const barrierMesh = new THREE.Mesh(barrierGeometry, barrierMaterial);
+    barrierMesh.visible = false;
+    scene.add(barrierMesh);
+
     function latLongToVector3(lat: number, lon: number, radius = 1.02) {
       const lonOffset = (Math.random() - 0.5) * 3; // Random offset between -1.5 to 1.5 degrees
       const phi = (90 - lat) * (Math.PI / 180);
@@ -168,6 +174,14 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       } else {
         setHoveredMarker(null);
         setHoveredInfo(null);
+      }
+
+      // Check for intersection with the invisible barrier
+      const barrierIntersects = raycaster.current.intersectObject(barrierMesh);
+      if (barrierIntersects.length > 0) {
+        rotationSpeedRef.current = 0;
+      } else {
+        rotationSpeedRef.current = 0.0004;
       }
 
       renderer.render(scene, camera);
