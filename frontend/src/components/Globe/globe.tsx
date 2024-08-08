@@ -8,12 +8,10 @@ import { getFresnelMat } from "./src/getFresnelMat";
 const getSentimentColor = (sentiment: number) => {
   const color = new THREE.Color();
   const power = 1.5;
-  // Normalize sentiment from [-1, 1] to [0, 1], with a bias towards negative
   const normalized = Math.pow((sentiment + 1) / 2, sentiment < 0 ? power : 1);
   color.lerpColors(new THREE.Color(1, 0, 0), new THREE.Color(0, 1, 0), normalized);
   return color;
 };
-
 
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -24,17 +22,15 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(null);
   const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
-  
 
   useEffect(() => {
-    // Clear previous markers and reset hovered marker
     markerRefs.current.forEach(marker => marker.parent?.remove(marker));
     markerRefs.current = [];
     setHoveredMarker(null);
     setHoveredInfo(null);
 
     const w = mountRef.current?.clientWidth || window.innerWidth;
-    const h = mountRef.current?.clientHeight || window.innerHeight; 
+    const h = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
     camera.position.z = 3;
@@ -67,14 +63,14 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const earthMesh = new THREE.Mesh(geometry, material);
     earthGroup.add(earthMesh);
 
-    const barrierGeometry = new THREE.SphereGeometry(1.2, 64, 64); 
+    const barrierGeometry = new THREE.SphereGeometry(1.2, 64, 64);
     const barrierMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.0, transparent: true });
     const barrierMesh = new THREE.Mesh(barrierGeometry, barrierMaterial);
     barrierMesh.visible = false;
     scene.add(barrierMesh);
 
     function latLongToVector3(lat: number, lon: number, radius = 1.02) {
-      const lonOffset = (Math.random() - 0.5) * 3; // Random offset between -1.5 to 1.5 degrees
+      const lonOffset = (Math.random() - 0.5) * 3;
       const phi = (90 - lat) * (Math.PI / 180);
       const theta = (lon + lonOffset + 180) * (Math.PI / 180);
 
@@ -86,7 +82,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     }
 
     articles.forEach((article) => {
-      // Process main location
       if (article.mainLocation) {
         const position = latLongToVector3(article.mainLocation.latitude, article.mainLocation.longitude);
         const sentimentColor = getSentimentColor(article.sentiment);
@@ -101,8 +96,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         markerRefs.current.push(mainMarker);
         gsap.to(mainMarker.scale, { z: 1.2, duration: 2, repeat: -1, yoyo: true });
       }
-    
-      // Process secondary concept locations
+
       article.locations.forEach((location: { latitude: number; longitude: number; }) => {
         const position = latLongToVector3(location.latitude, location.longitude);
         const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.1);
@@ -117,7 +111,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
       });
     });
-
 
     const lightsMat = new THREE.MeshBasicMaterial({
       map: loader.load("/textures/2k_earth_nightmap.jpg"),
@@ -151,10 +144,8 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
 
-
     const animate = () => {
       requestAnimationFrame(animate);
-      console.log(rotationSpeedRef.current)
 
       earthGroup.rotation.y += rotationSpeedRef.current;
       cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
@@ -178,7 +169,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
 
       if (mouse.current.x && mouse.current.y) {
-        // Check for intersection with the invisible barrier
         const barrierIntersects = raycaster.current.intersectObject(barrierMesh);
         if (barrierIntersects.length > 0) {
           rotationSpeedRef.current = 0;
@@ -187,11 +177,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         }
       }
 
-        renderer.render(scene, camera);
+      renderer.render(scene, camera);
     };
 
     animate();
-
 
     const handleWindowResize = () => {
       const newWidth = mountRef.current?.clientWidth || window.innerWidth;
@@ -207,7 +196,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         const bounds = mountRef.current.getBoundingClientRect();
         mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
         mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-        setInfoWindowPosition({ x: event.clientX + 10, y: event.clientY + 10 });
+        setInfoWindowPosition({ x: event.clientX - bounds.left + 50, y: event.clientY - bounds.top + 20 });
       }
     };
 
@@ -256,7 +245,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           border-radius: 8px;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
           pointer-events: none;
-          min-width: 500px;
+          max-width: 200px;
           position: absolute;
         }
 
