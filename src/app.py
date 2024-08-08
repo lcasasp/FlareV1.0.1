@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
-from services import add_indexed_news, add_indexed_events
+from services import add_indexed_events, event_mapping
 from config import Config
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
@@ -25,7 +25,7 @@ def get_articles():
         },
         "sort": [
             {
-                "relevance": {
+                "socialScore": {
                     "order": "desc"
                 }
             }
@@ -35,6 +35,7 @@ def get_articles():
     articles = [hit["_source"] for hit in result['hits']['hits']]
 
     return jsonify(articles)
+
 
 @app.route('/search', methods=['GET'])
 def search_events():
@@ -51,7 +52,7 @@ def search_events():
                             {
                                 "multi_match": {
                                     "query": query,
-                                    "fields": ["title^3", "body", "concepts.label^3"],
+                                    "fields": ["title.eng^3", "summary.eng", "concepts.label.eng^3"],
                                     "type": "cross_fields",
                                     "operator": "and"
                                 }
@@ -60,8 +61,8 @@ def search_events():
                         "filter": [
                             {
                                 "range": {
-                                    "date": {
-                                        "gte": "now-30d/d"  # Adjust this for date range
+                                    "eventDate": {
+                                        "gte": "now-30d/d" 
                                     }
                                 }
                             }
@@ -78,7 +79,7 @@ def search_events():
                     },
                     {
                         "gauss": {
-                            "date": {
+                            "eventDate": {
                                 "origin": current_date,
                                 "scale": "7d",
                                 "offset": "1d",
@@ -91,7 +92,7 @@ def search_events():
                 "boost_mode": "sum"   # Combines function scores with query score
             }
         },
-        "size": 1000
+        "size": 100
     }
 
     search_result = es.search(index="events", body=search_body)
@@ -109,8 +110,9 @@ def fetch_and_index_events():
 @app.route('/es-index')
 def create_es_index():
     if not es.indices.exists(index="events"):
-        es.indices.create(index="events", ignore=400)
-    return jsonify({"message": Config.ELASTIC_PW})
+        es.indices.create(index="events", body=event_mapping)
+    return jsonify({"Creating index": "events"})
+
 
 @app.route('/delete_index', methods=['DELETE'])
 def delete_index():
