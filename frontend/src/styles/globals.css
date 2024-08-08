@@ -20,6 +20,10 @@ body {
   font-family: Copperplate, fantasy;
 }
 
+.header img {
+  border-radius: 50%;
+}
+
 button {
   outline: none;
   border: none;
@@ -164,14 +168,13 @@ button:hover {
   margin: 0 5px;
   padding: 5px 10px;
   border: none;
-  background-color: white;
   color: black;
   cursor: pointer;
   font-size: 18px;
   border-bottom: 1px solid #3B82F6;
 }
 
-.categories .active {
-  background-color: #3B82F6;
+.categories-active {
+  background-color: #3b83f688;
   color: white;
 }

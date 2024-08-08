@@ -34,7 +34,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     setHoveredInfo(null);
 
     const w = mountRef.current?.clientWidth || window.innerWidth;
-    const h = mountRef.current?.clientHeight || window.innerHeight;
+    const h = mountRef.current?.clientHeight || window.innerHeight; 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
     camera.position.z = 3;
@@ -211,7 +211,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
     };
 
-    const handleClick = (event: MouseEvent) => {
+    const handleClick = () => {
       raycaster.current.setFromCamera(mouse.current, camera);
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
       if (intersects.length > 0) {
@@ -245,15 +245,19 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         </div>
       )}
       <style jsx>{`
+        .background-globe {
+          overflow: hidden;
+          position: relative;
+        }
         .info-window {
-          position: absolute;
           background: rgba(0, 0, 0, 0.7);
           color: #fff;
           padding: 10px;
           border-radius: 8px;
           box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
           pointer-events: none;
-          max-width: 200px;
+          min-width: 500px;
+          position: absolute;
         }
 
         .info-window h3 {
