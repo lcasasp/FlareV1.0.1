@@ -2,73 +2,45 @@ import React, { useState, useEffect, useRef } from 'react';
 
 const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const conveyorBeltRef = useRef<HTMLDivElement>(null);
-
-  const totalItems = 10;
-  const displayCount = 5;
-  const loopItems = [...articles.slice(-displayCount), ...articles, ...articles.slice(0, displayCount)];
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const events = articles.slice(0, 10);
+  const totalItems = 10;
+  const displayCount = 5;
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex === events.length - 1 ? 0 : prevIndex + 1));
-    }, 5000); // Change every 5 seconds
+    startTimer();
+    return () => {
+      stopTimer();
+    };
+  }, []);
 
-    setTimer(interval);
+  const startTimer = () => {
+    stopTimer(); 
+    timerRef.current = setInterval(handleNextClick, 5000);
+  };
 
-    return () => clearInterval(interval);
-  }, [events.length]);
-
-  const resetTimer = () => {
-    if (timer) {
-      clearInterval(timer);
+  const stopTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
-    const newInterval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex === events.length - 1 ? 0 : prevIndex + 1));
-    }, 5000);
-    setTimer(newInterval);
   };
 
   const handlePrevClick = () => {
-    resetTimer();
-    if (currentIndex === 0) {
-      setCurrentIndex(5);
-      setTimeout(() => {
-        if (conveyorBeltRef.current) {
-          conveyorBeltRef.current.style.transition = 'none'; // Temporarily disable transition
-          setCurrentIndex(5);
-          setTimeout(() => {
-            if (conveyorBeltRef.current) {
-              conveyorBeltRef.current.style.transition = 'transform 1s ease-in-out'; // Re-enable transition
-            }
-          }, 50);
-        }
-      }, 1000); // Wait for the last transition to complete
-    } else {
-      setCurrentIndex((prevIndex) => prevIndex - 1);
-    }
+    stopTimer();
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? totalItems - displayCount : prevIndex - 1
+    );
+    startTimer();
   };
 
   const handleNextClick = () => {
-    resetTimer();
-    if (currentIndex === 5) {
-      setCurrentIndex(0);
-      setTimeout(() => {
-        if (conveyorBeltRef.current) {
-          conveyorBeltRef.current.style.transition = 'none'; // Temporarily disable transition
-          setCurrentIndex(0);
-          setTimeout(() => {
-            if (conveyorBeltRef.current) {
-              conveyorBeltRef.current.style.transition = 'transform 1s ease-in-out'; // Re-enable transition
-            }
-          }, 50);
-        }
-      }, 1000); // Wait for the last transition to complete
-    } else {
-      setCurrentIndex((prevIndex) => prevIndex + 1);
-    }
+    stopTimer();
+    setCurrentIndex((prevIndex) =>
+      prevIndex >= totalItems - displayCount ? 0 : prevIndex + 1
+    );
+    startTimer();
   };
 
   const displayedArticles = events.slice(currentIndex, currentIndex + 5);

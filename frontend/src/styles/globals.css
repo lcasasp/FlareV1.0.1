@@ -86,6 +86,8 @@ button:hover {
   border-radius: 5px;
   padding-left: 5px;
   padding-right: 5px;
+  top: -20px;
+  width: 100%;
 }
 
 .news-headline-system .conveyor-belt-container {
