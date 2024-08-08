@@ -8,6 +8,12 @@ interface ArticleProps {
     sentiment: number;
     image: string;
     eventDate: string;
+    socialScore: number;
+    wgt: number;
+    categories: {
+      label: string;
+      wgt: number;
+    }[];
     concepts: {
       label: 
       {
