@@ -13,6 +13,12 @@ interface Article {
   sentiment: number;
   image: string;
   eventDate: string;
+  socialScore: number;
+  wgt: number;
+  categories: {
+    label: string;
+    wgt: number;
+  }[];
   concepts: {
     label: {
       eng: string;
@@ -43,45 +49,110 @@ const Home: React.FC = () => {
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [sortBy, setSortBy] = useState<string>('None');
+  const [topArticles, setTopArticles] = useState<Article[]>([]);
+  const [filters, setFilters] = useState<{ location: string; concept: string; category: string }>({ location: "Any", concept: "Any", category: "All" });
 
   const fetchArticles = async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
     const formattedData = response.data.map((article: any) => {
-      const title = article.title.eng
-      const summary = article.summary.eng
-      const image = article.images[0]
+      const title = article.title.eng;
+      const summary = article.summary.eng;
+      const image = article.images[0];
 
       const mainLocation = article.location && article.location.lat && article.location.long ? {
-      label: article.location.label.eng,
-      latitude: article.location.lat,
-      longitude: article.location.long
+        label: article.location.label.eng,
+        latitude: article.location.lat,
+        longitude: article.location.long
       } : undefined;
 
       const locations = article.concepts
-      .filter((c: any) => c.type === "loc" && c.score > 60)
-      .map((loc: any) => {
-        const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
-        const longitude = loc.location && loc.location.long ? loc.location.long : 0;
-        return {
-        label: loc.label.eng,
-        latitude,
-        longitude
-        };
-      });
+        .filter((c: any) => c.type === "loc" && c.score > 60)
+        .map((loc: any) => {
+          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+          return {
+            label: loc.label.eng,
+            latitude,
+            longitude
+          };
+        });
 
       return {
-      ...article,
-      title,
-      image,
-      summary,
-      mainLocation,
-      locations
+        ...article,
+        title,
+        image,
+        summary,
+        mainLocation,
+        locations
       };
     });
     setArticles(formattedData);
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
+    computeTopArticles(formattedData, 'All');
+  };
+
+  const computeTopArticles = (articles: Article[], category: string) => {
+    let filteredArticles = articles;
+
+    if (category !== 'All' && category !== 'Breaking') {
+      filteredArticles = articles.filter(article =>
+        article.categories.some(cat => cat.label.startsWith(`dmoz/${category}`))
+      );
+    }
+
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    const topStories = filteredArticles
+      .filter((article: any) => new Date(article.eventDate) >= sevenDaysAgo)
+      .map((article: any) => ({
+        ...article,
+        compositeScore: (0.4 * article.relevance) + (0.3 * article.socialScore) + (0.3 * article.wgt)
+      }))
+      .sort((a: any, b: any) => b.compositeScore - a.compositeScore)
+      .slice(0, 10); // Get top 10 articles by composite score
+
+    setTopArticles(topStories);
+  };
+
+  useEffect(() => {
+    computeTopArticles(articles, filters.category);
+  }, [filters.category, articles]);
+
+  const handleFilterChange = (newFilters: any) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+
+    let filtered = articles;
+
+    if (updatedFilters.location && updatedFilters.location !== "Any") {
+      filtered = filtered.filter(article =>
+        (article.mainLocation && article.mainLocation.label === updatedFilters.location) ||
+        article.locations.some(location => location.label === updatedFilters.location)
+      );
+    }
+
+    if (updatedFilters.concept && updatedFilters.concept !== "Any") {
+      filtered = filtered.filter(article =>
+        article.concepts.some(concept => concept.label.eng === updatedFilters.concept)
+      );
+    }
+
+    if (updatedFilters.category && updatedFilters.category !== "All") {
+      if (updatedFilters.category === 'Breaking') {
+        filtered = topArticles;
+      }
+      else {
+        filtered = filtered.filter(article =>
+          article.categories.some(cat => cat.label.startsWith(`dmoz/${updatedFilters.category}`))
+        );
+      }
+    }
+
+    setFilteredArticles(filtered);
+    setCurrentPage(1); // Reset to the first page on filter change
+    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
 
   const handleSearchResults = async (query: string) => {
@@ -89,35 +160,35 @@ const Home: React.FC = () => {
       `http://127.0.0.1:5000/search?query=${query}`
     );
     const formattedData = response.data.map((article: any) => {
-      const title = article._source.title.eng
-      const summary = article._source.summary.eng
-      const image = article._source.images[0]
+      const title = article._source.title.eng;
+      const summary = article._source.summary.eng;
+      const image = article._source.images[0];
 
       const mainLocation = article._source.location && article._source.location.lat && article._source.location.long ? {
-      label: article._source.location.label.eng,
-      latitude: article._source.location.lat,
-      longitude: article._source.location.long
+        label: article._source.location.label.eng,
+        latitude: article._source.location.lat,
+        longitude: article._source.location.long
       } : undefined;
 
       const locations = article._source.concepts
-      .filter((c: any) => c.type === "loc" && c.score > 60)
-      .map((loc: any) => {
-        const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
-        const longitude = loc.location && loc.location.long ? loc.location.long : 0;
-        return {
-        label: loc.label.eng,
-        latitude,
-        longitude
-        };
-      });
+        .filter((c: any) => c.type === "loc" && c.score > 60)
+        .map((loc: any) => {
+          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+          return {
+            label: loc.label.eng,
+            latitude,
+            longitude
+          };
+        });
 
       return {
-      ...article._source,
-      title,
-      image,
-      summary,
-      mainLocation,
-      locations
+        ...article._source,
+        title,
+        image,
+        summary,
+        mainLocation,
+        locations
       };
     });
     setArticles(formattedData);
@@ -126,44 +197,7 @@ const Home: React.FC = () => {
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
   };
 
-
-  const handleFilterChange = (filters: any) => {
-    let filtered = articles;
-
-    if (filters.location && filters.location !== "Any") {
-      filtered = filtered.filter(article => 
-        (article.mainLocation && article.mainLocation.label === filters.location) ||
-        article.locations.some(location => location.label === filters.location)
-      );
-    }
-
-    if (filters.concept && filters.concept !== "Any") {
-      filtered = filtered.filter(article => 
-        article.concepts.some(concept => concept.label.eng === filters.concept)
-      );
-    }
-
-    if (filters.location === "Any" && filters.concept === "Any") {
-      filtered = articles;
-    } else if (filters.location === "Any" && filters.concept !== "Any") {
-      filtered = filtered.filter(article =>
-        article.concepts.some(concept => concept.label.eng === filters.concept)
-      );
-    } else if (filters.location !== "Any" && filters.concept === "Any") {
-      filtered = filtered.filter(article =>
-        (article.mainLocation && article.mainLocation.label === filters.location) ||
-        article.locations.some(location => location.label === filters.location)
-      );
-    }
-
-    setFilteredArticles(filtered);
-    setCurrentPage(1); // Reset to the first page on filter change
-    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  };
-
-
   const handleSortChange = (sortCriteria: string) => {
-    setSortBy(sortCriteria);
     let sortedArticles = [...filteredArticles];
 
     switch (sortCriteria) {
@@ -189,6 +223,14 @@ const Home: React.FC = () => {
     setFilteredArticles(sortedArticles);
   };
 
+  const handleCategorySelect = (category: string) => {
+    if (filters.category === category) {
+      handleFilterChange({ category: 'All' });
+    } else {
+      handleFilterChange({ category });
+    }
+  };
+
   useEffect(() => {
     fetchArticles();
   }, []);
@@ -209,7 +251,7 @@ const Home: React.FC = () => {
   return (
     <div className="container mx-auto p-4">
       <Header />
-      <Headlines articles={filteredArticles}/>
+      <Headlines articles={topArticles} onCategorySelect={handleCategorySelect} />
       <ThreeGlobe articles={filteredArticles} />
       <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} onSortChange={handleSortChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
       {currentArticles.map((article, index) => (
@@ -225,3 +267,4 @@ const Home: React.FC = () => {
 };
 
 export default Home;
+
