@@ -4,7 +4,7 @@ interface HeaderProps {
   onCategorySelect: (category: string) => void;
 }
 
-const categories = ["All", "Breaking", "Business", "Technology", "Science", "Politics"];
+const categories = ["All", "Breaking", "Business", "Technology", "Science", "Society"];
 
 const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
   const [activeCategory, setActiveCategory] = useState('All');
