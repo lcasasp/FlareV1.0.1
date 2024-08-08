@@ -89,13 +89,45 @@ const Home: React.FC = () => {
     const response = await axios.get(
       `http://127.0.0.1:5000/search?query=${query}`
     );
-    const searchResults = response.data.map((result: any) => result._source);
-    setArticles(searchResults);
-    setFilteredArticles(searchResults);
+    const formattedData = response.data.map((article: any) => {
+      const title = article._source.title.eng
+      const summary = article._source.summary.eng
+      const image = article._source.images[0]
+
+      const mainLocation = article._source.location && article._source.location.lat && article._source.location.long ? {
+      label: article._source.location.label.eng,
+      latitude: article._source.location.lat,
+      longitude: article._source.location.long
+      } : undefined;
+
+      const locations = article._source.concepts
+      .filter((c: any) => c.type === "loc" && c.score > 60)
+      .map((loc: any) => {
+        const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
+        const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+        return {
+        label: loc.label.eng,
+        latitude,
+        longitude
+        };
+      });
+
+      return {
+      ...article._source,
+      title,
+      image,
+      summary,
+      mainLocation,
+      locations
+      };
+    });
+    setArticles(formattedData);
+    setFilteredArticles(formattedData);
     setCurrentPage(1); // Reset to the first page on new search results
-    setTotalPages(Math.ceil(searchResults.length / ITEMS_PER_PAGE));
+    setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
   };
   
+
   const handleFilterChange = (filters: any) => {
     let filtered = articles;
 
@@ -129,6 +161,7 @@ const Home: React.FC = () => {
     setCurrentPage(1); // Reset to the first page on filter change
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
+
 
   const handleSortChange = (sortCriteria: string) => {
     setSortBy(sortCriteria);

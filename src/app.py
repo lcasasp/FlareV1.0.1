@@ -51,7 +51,7 @@ def search_events():
                             {
                                 "multi_match": {
                                     "query": query,
-                                    "fields": ["title^3", "body", "concepts.label^3"],
+                                    "fields": ["title.eng^3", "summary.eng", "concepts.label.eng^3"],
                                     "type": "cross_fields",
                                     "operator": "and"
                                 }
@@ -60,8 +60,8 @@ def search_events():
                         "filter": [
                             {
                                 "range": {
-                                    "date": {
-                                        "gte": "now-30d/d"  # Adjust this for date range
+                                    "eventDate": {
+                                        "gte": "now-30d/d" 
                                     }
                                 }
                             }
@@ -78,7 +78,7 @@ def search_events():
                     },
                     {
                         "gauss": {
-                            "date": {
+                            "eventDate": {
                                 "origin": current_date,
                                 "scale": "7d",
                                 "offset": "1d",
@@ -91,7 +91,7 @@ def search_events():
                 "boost_mode": "sum"   # Combines function scores with query score
             }
         },
-        "size": 1000
+        "size": 100
     }
 
     search_result = es.search(index="events", body=search_body)
