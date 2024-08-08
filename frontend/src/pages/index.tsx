@@ -99,11 +99,10 @@ const Home: React.FC = () => {
 
     if (category !== 'All' && category !== 'Breaking') {
       filteredArticles = articles.filter(article =>
-        article.categories.some(cat => cat.label.startsWith(`dmoz/${category}`))
+      article.categories.some(cat => cat.label.includes(category))
       );
     }
 
-    //14 for now, will be changed to 7
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -114,7 +113,7 @@ const Home: React.FC = () => {
         compositeScore: (0.3 * article.totalArticleCount) + (0.4 * article.socialScore) + (0.3 * article.wgt)
       }))
       .sort((a: any, b: any) => b.compositeScore - a.compositeScore)
-      .slice(0, 10); // Top 10 stories
+      .slice(0, 25); // Top 25 stories
 
     setTopArticles(topStories);
   };
@@ -148,7 +147,7 @@ const Home: React.FC = () => {
       }
       else {
         filtered = filtered.filter(article =>
-          article.categories.some(cat => cat.label.startsWith(`dmoz/${updatedFilters.category}`))
+          article.categories.some(cat => cat.label.includes(updatedFilters.category))
         );
         filtered.sort((a, b) => b.wgt - a.wgt);
       }

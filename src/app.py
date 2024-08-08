@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
-from services import add_indexed_events, event_mapping
+from services import *
 from config import Config
 from flask_cors import CORS, cross_origin
 from datetime import datetime, timedelta
@@ -9,13 +9,6 @@ import logging
 app = Flask(__name__)
 
 CORS(app)
-
-es = Elasticsearch(
-    ["http://localhost:9200"],
-    basic_auth=('elastic', Config.ELASTIC_PW),
-    verify_certs=False  # Only for development purposes
-)
-
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
@@ -99,12 +92,26 @@ def search_events():
     return search_result['hits']['hits']
 
 
-@app.route('/fetch')
+@app.route('/fetch', methods=['GET'])
 def fetch_and_index_events():
+    pages = request.args.get('pages', '1-1')
+    categories = request.args.get('categories')  # expecting single value
+    concepts = request.args.getlist('concepts')  # expecting multiple values
+    
+    page_range = pages.split('-')
+    start_page = int(page_range[0])
+    end_page = int(page_range[1]) if len(page_range) > 1 else start_page
+
     if not es.indices.exists(index="events"):
         es.indices.create(index="events", ignore=400)
-    articles = add_indexed_events()
-    return articles
+
+    events = fetch_events(categories=categories, concepts=concepts, start_page=start_page, end_page=end_page)
+    processed_events = extract_and_prepare_event_data(events)
+
+    for event in processed_events:
+        es.index(index="events", body=event)
+
+    return jsonify(processed_events)
 
 
 @app.route('/es-index')

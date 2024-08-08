@@ -14,15 +14,16 @@ es = Elasticsearch(
     verify_certs=False,
 )
 
-def fetch_events():
+def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
     all_events = []
+    print("categories: ", categories)
+    print("concepts: ", concepts)
 
-    for curPage in range(1, 5):
+    for curPage in range(start_page, end_page + 1):
         q = QueryEventsIter(
-            conceptUri=QueryItems.OR(["http://en.wikipedia.org/wiki/Climate_change",
-                                      "http://en.wikipedia.org/wiki/Energy"]),
-            categoryUri=QueryItems.OR(["dmoz/Business", "dmoz/Science", "dmoz/Technology", "dmoz/Environment", "dmoz/Politics"]),
+            conceptUri=concepts if concepts else "http://en.wikipedia.org/wiki/Climate_change",
+            categoryUri=categories if categories else None,
             sourceUri=None,
             sourceLocationUri=None,
             sourceGroupUri=None,
@@ -31,9 +32,9 @@ def fetch_events():
             lang="eng",
             dateStart=None,
             dateEnd=None,
-            minArticlesInEvent=1,
-            maxArticlesInEvent=10,
-            dateMentionStart=datetime.now() - timedelta(days=1),
+            minArticlesInEvent=5,
+            maxArticlesInEvent=999,
+            dateMentionStart=datetime.now() - timedelta(days=30),
             dateMentionEnd=None,
             ignoreKeywords=None,
             ignoreConceptUri=None,
@@ -46,10 +47,11 @@ def fetch_events():
             ignoreLang=None,
             keywordsLoc="body",
             ignoreKeywordsLoc="body",
-            requestedResult=RequestEventsInfo(count=50, page=curPage,
+            requestedResult=RequestEventsInfo(count=50, sortBy="rel", page=curPage,
                                               returnInfo=ReturnInfo(
-                                                  eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
-                                                  locationInfo=LocationInfoFlags(label=True, geoLocation=True)))
+                                                eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
+                                                locationInfo=LocationInfoFlags(label=True, geoLocation=True),
+                                            ))
         )
 
         res = er.execQuery(q)
@@ -62,8 +64,13 @@ def fetch_events():
 def extract_and_prepare_event_data(event_response):
     unique_articles = []
     for event in event_response:
+        # Filter concepts with a score over 50
+        if 'concepts' in event:
+            filtered_concepts = [concept for concept in event['concepts'] if concept.get('score', 0) > 50]
+            event['concepts'] = filtered_concepts
         article_url = event['infoArticle']['eng']['url']
-        # Query Elasticsearch to check if the article URL already exists
+        
+        # check if the article URL already exists
         query = {
             "query": {
                 "term": {
@@ -76,18 +83,6 @@ def extract_and_prepare_event_data(event_response):
             unique_articles.append(event)
     return unique_articles
 
-
-def add_indexed_events():
-    if not es.indices.exists(index="events"):
-        es.indices.create(index="events", body=event_mapping)
-
-    event_api_response = fetch_events()
-    events = extract_and_prepare_event_data(event_api_response)
-
-    for event in events:
-        es.index(index="events", body=event)
-
-    return events
 
 event_mapping = {
     "mappings": {
@@ -109,13 +104,24 @@ event_mapping = {
                     },
                     "location": {
                         "properties": {
+                            "country": {   
+                                "properties": {
+                                    "label": {
+                                        "properties": {
+                                            "eng": {"type": "text"},
+                                        }
+                                    },
+                                    "lat": {"type": "float"},
+                                    "long": {"type": "float"},
+                                }
+                            },
                             "label": {
                                 "properties": {
                                     "eng": {"type": "text"},
                                 }
                             },
-                            "lat": {"type": "long"},
-                            "long": {"type": "long"},
+                            "lat": {"type": "float"},
+                            "long": {"type": "float"},
                         }
                     },
                 }
@@ -150,8 +156,8 @@ event_mapping = {
                                     "eng": {"type": "text"},
                                 }
                             },
-                            "lat": {"type": "long"},
-                            "long": {"type": "long"},
+                            "lat": {"type": "float"},
+                            "long": {"type": "float"},
                         }
                     },
                     "label": {
@@ -159,8 +165,8 @@ event_mapping = {
                             "eng": {"type": "text"},
                         }
                     },
-                    "lat": {"type": "long"},
-                    "long": {"type": "long"},
+                    "lat": {"type": "float"},
+                    "long": {"type": "float"},
                 }
             },
             "infoArticle": {
