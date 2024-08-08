@@ -92,13 +92,14 @@ button:hover {
   display: flex;
   align-items: center;
   position: relative;
+  overflow: hidden;
+  width: 100%;
 }
 
 .news-headline-system .conveyor-belt {
   display: flex;
-  transition: transform 0.5s ease-in-out;
-  width: 100%;
-  overflow: hidden;
+  transition: transform 1s ease-in-out;
+  width: 500%;
 }
 
 .news-headline-system .conveyor-belt .article {
@@ -107,6 +108,7 @@ button:hover {
   padding: 10px;
   text-align: center;
   cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .news-headline-system .conveyor-belt .article img {
@@ -114,22 +116,33 @@ button:hover {
   height: 150px;
   object-fit: cover;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .news-headline-system .conveyor-belt .article h4 {
   margin: 10px 0;
   font-size: 1rem;
-  height: 3rem; /* Fixed height for titles */
+  height: 3rem; 
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2; /* Number of lines to show */
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .news-headline-system .conveyor-belt .article:hover {
-  transform: perspective(1000px) rotateX(var(--rot-x)) rotateY(var(--rot-y)) scale(1.001);
-  background: radial-gradient(circle at var(--drop-x) var(--drop-y), rgba(59, 174, 246, 0.3), transparent);
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.news-headline-system .conveyor-belt .article:hover img {
+  transform: scale(1.05);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.news-headline-system .conveyor-belt .article:hover h4 {
+  transform: scale(1.05);
 }
  
 .news-headline-system .nav-button {
@@ -140,6 +153,7 @@ button:hover {
   cursor: pointer;
   z-index: 1;
   transition: background-color 0.3s;
+  border-radius: 5px;
 }
 
 .news-headline-system .nav-button:hover {
