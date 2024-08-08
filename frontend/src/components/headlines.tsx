@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-
-const categories = ["Breaking", "Business", "Technology", "Science", "Politics"];
+import React, { useState, useEffect, useRef } from 'react';
 
 const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
+  const conveyorBeltRef = useRef<HTMLDivElement>(null);
+
+  const totalItems = 10;
+  const displayCount = 5;
+  const loopItems = [...articles.slice(-displayCount), ...articles, ...articles.slice(0, displayCount)];
 
   const events = articles.slice(0, 10);
 
@@ -30,12 +33,42 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
 
   const handlePrevClick = () => {
     resetTimer();
-    setCurrentIndex((prevIndex) => (prevIndex === 0 ? events.length - 1 : prevIndex - 1));
+    if (currentIndex === 0) {
+      setCurrentIndex(5);
+      setTimeout(() => {
+        if (conveyorBeltRef.current) {
+          conveyorBeltRef.current.style.transition = 'none'; // Temporarily disable transition
+          setCurrentIndex(5);
+          setTimeout(() => {
+            if (conveyorBeltRef.current) {
+              conveyorBeltRef.current.style.transition = 'transform 1s ease-in-out'; // Re-enable transition
+            }
+          }, 50);
+        }
+      }, 1000); // Wait for the last transition to complete
+    } else {
+      setCurrentIndex((prevIndex) => prevIndex - 1);
+    }
   };
 
   const handleNextClick = () => {
     resetTimer();
-    setCurrentIndex((prevIndex) => (prevIndex === events.length - 1 ? 0 : prevIndex + 1));
+    if (currentIndex === 5) {
+      setCurrentIndex(0);
+      setTimeout(() => {
+        if (conveyorBeltRef.current) {
+          conveyorBeltRef.current.style.transition = 'none'; // Temporarily disable transition
+          setCurrentIndex(0);
+          setTimeout(() => {
+            if (conveyorBeltRef.current) {
+              conveyorBeltRef.current.style.transition = 'transform 1s ease-in-out'; // Re-enable transition
+            }
+          }, 50);
+        }
+      }, 1000); // Wait for the last transition to complete
+    } else {
+      setCurrentIndex((prevIndex) => prevIndex + 1);
+    }
   };
 
   const displayedArticles = events.slice(currentIndex, currentIndex + 5);
@@ -48,8 +81,8 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
     <div className="news-headline-system">
       <div className="conveyor-belt-container">
         <button className="nav-button prev-button" onClick={handlePrevClick}>&#10094;</button>
-        <div className="conveyor-belt">
-          {displayedArticles.map((article, index) => (
+        <div className="conveyor-belt" style={{ transform: `translateX(-${currentIndex * 20}%)` }}>
+          {events.map((article, index) => (
             <div key={index} className="article" onClick={() => window.open(article.infoArticle.eng.url, '_blank')}>
               <img src={article.image} alt={article.title} />
               <h4><b>{article.title}</b></h4>
