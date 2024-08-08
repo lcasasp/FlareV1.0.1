@@ -60,7 +60,7 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, totalPages, onPage
   };
 
   return (
-    <div className="flex justify-center my-4 space-x-2">
+    <div className="flex justify-center my-4 space-x-2" style={{ fontFamily: 'Copperplate, fantasy' }}>
       <button
         className={`px-3 py-1 rounded-md ${currentPage === 1 ? 'bg-gray-300 cursor-not-allowed' : 'bg-gray-100 hover:bg-gray-200'}`}
         onClick={() => onPageChange(currentPage - 1)}

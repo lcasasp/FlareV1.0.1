@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const categories = ["Breaking", "Business", "Technology", "Science", "Politics"];
 
-const Headlines: React.FC<{ articles: any[], onCategorySelect: (category: string) => void }> = ({ articles, onCategorySelect }) => {
-  const [activeCategory, setActiveCategory] = useState('All');
+const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
 
@@ -44,11 +43,7 @@ const Headlines: React.FC<{ articles: any[], onCategorySelect: (category: string
     displayedArticles.push(...events.slice(0, 5 - displayedArticles.length));
   }
 
-  const handleCategoryClick = (category: string) => {
-    setActiveCategory(category === activeCategory ? 'All' : category);
-    onCategorySelect(category === activeCategory ? 'All' : category);
-  };
-  
+
   return (
     <div className="news-headline-system">
       <div className="conveyor-belt-container">
@@ -62,17 +57,6 @@ const Headlines: React.FC<{ articles: any[], onCategorySelect: (category: string
           ))}
         </div>
         <button className="nav-button next-button" onClick={handleNextClick}>&#10095;</button>
-      </div>
-      <div className="categories">
-        {categories.map((category) => (
-          <button
-            key={category}
-            onClick={() => handleCategoryClick(category)}
-            className={activeCategory === category ? "active" : ""}
-          >
-            {category}
-          </button>
-        ))}
       </div>
     </div>
   );

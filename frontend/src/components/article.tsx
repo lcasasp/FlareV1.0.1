@@ -36,6 +36,7 @@ interface ArticleProps {
         url: string;
       }
     };
+    totalArticleCount: number;
   };
 }
 
@@ -54,7 +55,7 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
         '--rot-y': `${rotateY}deg`,
       } as React.CSSProperties}
     >
-      <h3 className="text-xl font-semibold mb-2 w-full">{article.title}</h3>
+      <h3 className="article-title text-xl font-semibold mb-2 w-full">{article.title}</h3>
       <p className="text-gray-600 text-sm mb-2">{article.eventDate}</p>
       <h3 className="text-sm font-semibold mb-2" style={{ color: '#064273' }}>Sentiment: {article.sentiment.toFixed(2)}</h3>
       {article.image && <img src={article.image} alt="Article" className="article-image float-left mr-4 mb-4" />}

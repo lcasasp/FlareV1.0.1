@@ -10,7 +10,25 @@
 
 body {
   font-family: 'Roboto', sans-serif;
+  padding-top: 80px;
 }
+
+.header {
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+  font-family: Copperplate, fantasy;
+}
+
+button {
+  outline: none;
+  border: none;
+}
+
+button:hover {
+  cursor: pointer;
+}
+
 
 @layer utilities {
   .text-balance {
@@ -24,10 +42,22 @@ body {
   clear: both;
 }
 
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  padding-left: 5px;
+  color: #132c54;
+  
+}
+
 .article-card {
   display: block;
 }
 
+.article-title {
+  font-family: Copperplate, fantasy;
+}
 .article-image {
   float: left;
   margin-right: 1rem;
@@ -48,13 +78,16 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   overflow: hidden;
+  box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.2) ;
+  border-radius: 5px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .news-headline-system .conveyor-belt-container {
   display: flex;
   align-items: center;
   position: relative;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) ;
 }
 
 .news-headline-system .conveyor-belt {
@@ -76,6 +109,7 @@ body {
   width: 100%;
   height: 150px;
   object-fit: cover;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .news-headline-system .conveyor-belt .article h4 {
@@ -95,7 +129,7 @@ body {
 }
  
 .news-headline-system .nav-button {
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.3);
   color: white;
   border: none;
   padding: 10px;
@@ -126,15 +160,18 @@ body {
   margin-top: 10px;
 }
 
-.news-headline-system .categories button {
+.categories button {
   margin: 0 5px;
   padding: 5px 10px;
   border: none;
-  background-color: #ccc;
+  background-color: white;
+  color: black;
   cursor: pointer;
+  font-size: 18px;
+  border-bottom: 1px solid #3B82F6;
 }
 
-.news-headline-system .categories .active {
-  background-color: #007bff;
+.categories .active {
+  background-color: #3B82F6;
   color: white;
 }
