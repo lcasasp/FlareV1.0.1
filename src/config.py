@@ -12,8 +12,4 @@ class Config:
         load_dotenv(override=True)
 
 if __name__ == '__main__':
-    print(Config.NEWS_API_KEY)
-    print(Config.ELASTIC_PW)
     Config.reload_env()
-    print(Config.NEWS_API_KEY)
-    print(Config.ELASTIC_PW)
