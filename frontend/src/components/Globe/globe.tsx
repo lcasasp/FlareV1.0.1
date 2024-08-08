@@ -154,6 +154,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     const animate = () => {
       requestAnimationFrame(animate);
+      console.log(rotationSpeedRef.current)
 
       earthGroup.rotation.y += rotationSpeedRef.current;
       cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
@@ -176,15 +177,17 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         setHoveredInfo(null);
       }
 
-      // Check for intersection with the invisible barrier
-      const barrierIntersects = raycaster.current.intersectObject(barrierMesh);
-      if (barrierIntersects.length > 0) {
-        rotationSpeedRef.current = 0;
-      } else {
-        rotationSpeedRef.current = 0.0004;
+      if (mouse.current.x && mouse.current.y) {
+        // Check for intersection with the invisible barrier
+        const barrierIntersects = raycaster.current.intersectObject(barrierMesh);
+        if (barrierIntersects.length > 0) {
+          rotationSpeedRef.current = 0;
+        } else {
+          rotationSpeedRef.current = 0.0004;
+        }
       }
 
-      renderer.render(scene, camera);
+        renderer.render(scene, camera);
     };
 
     animate();
@@ -198,15 +201,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       renderer.setSize(newWidth, newHeight);
     };
     window.addEventListener("resize", handleWindowResize, false);
-
-    const handleMouseEnter = () => {
-      rotationSpeedRef.current = 0;
-    };
-
-    const handleMouseLeave = () => {
-      rotationSpeedRef.current = 0.0004;
-      setHoveredInfo(null);
-    };
 
     const handleMouseMove = (event: MouseEvent) => {
       if (mountRef.current) {
@@ -230,14 +224,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     };
 
     renderer.domElement.addEventListener('click', handleClick, false);
-    renderer.domElement.addEventListener('mouseenter', handleMouseEnter, false);
-    renderer.domElement.addEventListener('mouseleave', handleMouseLeave, false);
     renderer.domElement.addEventListener('mousemove', handleMouseMove, false);
 
     return () => {
       window.removeEventListener('resize', handleWindowResize);
-      renderer.domElement.removeEventListener('mouseenter', handleMouseEnter);
-      renderer.domElement.removeEventListener('mouseleave', handleMouseLeave);
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       mountRef.current?.removeChild(renderer.domElement);
     };

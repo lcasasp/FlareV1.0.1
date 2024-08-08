@@ -40,6 +40,7 @@ interface Article {
       url: string;
     };
   };
+  totalArticleCount: number;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -86,6 +87,7 @@ const Home: React.FC = () => {
         locations
       };
     });
+
     setArticles(formattedData);
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
@@ -101,6 +103,7 @@ const Home: React.FC = () => {
       );
     }
 
+    //14 for now, will be changed to 7
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -108,10 +111,10 @@ const Home: React.FC = () => {
       .filter((article: any) => new Date(article.eventDate) >= sevenDaysAgo)
       .map((article: any) => ({
         ...article,
-        compositeScore: (0.4 * article.relevance) + (0.3 * article.socialScore) + (0.3 * article.wgt)
+        compositeScore: (0.3 * article.totalArticleCount) + (0.4 * article.socialScore) + (0.3 * article.wgt)
       }))
       .sort((a: any, b: any) => b.compositeScore - a.compositeScore)
-      .slice(0, 10); // Get top 10 articles by composite score
+      .slice(0, 10); // Top 10 stories
 
     setTopArticles(topStories);
   };
@@ -147,6 +150,7 @@ const Home: React.FC = () => {
         filtered = filtered.filter(article =>
           article.categories.some(cat => cat.label.startsWith(`dmoz/${updatedFilters.category}`))
         );
+        filtered.sort((a, b) => b.wgt - a.wgt);
       }
     }
 
@@ -250,8 +254,8 @@ const Home: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <Header />
-      <Headlines articles={topArticles} onCategorySelect={handleCategorySelect} />
+      <Header onCategorySelect={handleCategorySelect}/>
+      <Headlines articles={topArticles} />
       <ThreeGlobe articles={filteredArticles} />
       <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} onSortChange={handleSortChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
       {currentArticles.map((article, index) => (
