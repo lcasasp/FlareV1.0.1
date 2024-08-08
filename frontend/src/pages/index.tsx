@@ -174,6 +174,7 @@ const Home: React.FC = () => {
         longitude: article._source.location.long
       } : undefined;
 
+      //Only care about locations with score over 60
       const locations = article._source.concepts
         .filter((c: any) => c.type === "loc" && c.score > 60)
         .map((loc: any) => {

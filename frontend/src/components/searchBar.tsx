@@ -79,7 +79,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-center my-8" style={{ fontFamily: "Copperplate, fantasy" }}>
+    <div className="flex flex-col items-center my-8" 
+      style={{ fontFamily: "Copperplate, fantasy" }}>
       <div className="flex justify-center w-full mb-4">
         <input
           type="text"
@@ -88,6 +89,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           className="p-2 w-2/3 border rounded-l-full focus:outline-none"
+          style={{ fontFamily: "Times New Roman" }}
         />
         <button
           onClick={handleSearch}

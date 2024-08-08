@@ -28,7 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
               key={category}
               onClick={() => handleCategoryClick(category)}
               className={`px-4 py-2 mx-2 rounded transition-colors duration-200 ${
-                activeCategory === category ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                activeCategory === category ? 'categories-active text-white' : 'text-gray-700 hover:bg-gray-300'
               }`}
             >
               {category}
