@@ -6,7 +6,6 @@ interface ArticleProps {
     title: string;
     summary: string;
     sentiment: number;
-    url: string;
     image: string;
     eventDate: string;
     concepts: {

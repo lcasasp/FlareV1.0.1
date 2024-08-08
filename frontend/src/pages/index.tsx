@@ -11,7 +11,6 @@ interface Article {
   title: string;
   summary: string;
   sentiment: number;
-  url: string;
   image: string;
   eventDate: string;
   concepts: {
@@ -126,7 +125,7 @@ const Home: React.FC = () => {
     setCurrentPage(1); // Reset to the first page on new search results
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
   };
-  
+
 
   const handleFilterChange = (filters: any) => {
     let filtered = articles;
