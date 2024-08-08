@@ -223,7 +223,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   }, [articles]);
 
   return (
-    <div ref={mountRef} className="background-globe">
+    <div ref={mountRef} className="background-globe cropped-globe">
       {hoveredInfo && (
         <div
           className="info-window"
@@ -234,9 +234,16 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         </div>
       )}
       <style jsx>{`
+        .container {
+          position: relative;
+        }
         .background-globe {
           overflow: hidden;
           position: relative;
+          transform: translateY(-100px);
+        }
+        .cropped-globe {
+          clip-path: inset(100px 0px 150px 0px); /* Crop 100px from the bottom */
         }
         .info-window {
           background: rgba(0, 0, 0, 0.7);
