@@ -55,6 +55,10 @@ button:hover {
   
 }
 
+.content-below {
+  margin-top: -250px; /* Move content up under globe */
+}
+
 .article-card {
   display: block;
 }

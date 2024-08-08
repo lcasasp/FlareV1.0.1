@@ -256,16 +256,26 @@ const Home: React.FC = () => {
     <div className="container mx-auto p-4">
       <Header onCategorySelect={handleCategorySelect}/>
       <Headlines articles={topArticles} />
+      <div className="globe-and-content">
       <ThreeGlobe articles={filteredArticles} />
-      <SearchBar onResults={handleSearchResults} onFilterChange={handleFilterChange} onSortChange={handleSortChange} availableConcepts={availableConcepts} availableLocations={availableLocations} />
-      {currentArticles.map((article, index) => (
-        <Article key={index} article={article} />
-      ))}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        onPageChange={handlePageChange}
-      />
+      <div className="content-below">
+        <SearchBar 
+          onResults={handleSearchResults} 
+          onFilterChange={handleFilterChange} 
+          onSortChange={handleSortChange} 
+          availableConcepts={availableConcepts} 
+          availableLocations={availableLocations} 
+        />
+        {currentArticles.map((article, index) => (
+          <Article key={index} article={article} />
+        ))}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </div>
+    </div>
     </div>
   );
 };
