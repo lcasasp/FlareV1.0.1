@@ -23,6 +23,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
 
+
   useEffect(() => {
     markerRefs.current.forEach(marker => marker.parent?.remove(marker));
     markerRefs.current = [];
@@ -200,7 +201,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
     };
 
-    const handleClick = () => {
+    const handleMouseDown = () => {
       raycaster.current.setFromCamera(mouse.current, camera);
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
       if (intersects.length > 0) {
@@ -212,11 +213,11 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
     };
 
-    renderer.domElement.addEventListener('click', handleClick, false);
+    renderer.domElement.addEventListener('mouseDown', handleMouseDown, false);
     renderer.domElement.addEventListener('mousemove', handleMouseMove, false);
 
     return () => {
-      window.removeEventListener('resize', handleWindowResize);
+      renderer.domElement.removeEventListener('mouseDown', handleMouseDown);
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
       mountRef.current?.removeChild(renderer.domElement);
     };
@@ -241,6 +242,11 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           overflow: hidden;
           position: relative;
           transform: translateY(-100px);
+
+          user-select: none; /* Disable text selection */
+          -webkit-user-select: none; /* Safari */
+          -moz-user-select: none; /* Firefox */
+          -ms-user-select: none; /* Edge */
         }
         .cropped-globe {
           clip-path: inset(100px 0px 150px 0px); /* Crop 100px from the bottom */
