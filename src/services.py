@@ -14,6 +14,7 @@ es = Elasticsearch(
     verify_certs=False,
 )
 
+
 def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
     all_events = []
@@ -49,9 +50,11 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
             ignoreKeywordsLoc="body",
             requestedResult=RequestEventsInfo(count=50, sortBy="rel", page=curPage,
                                               returnInfo=ReturnInfo(
-                                                eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
-                                                locationInfo=LocationInfoFlags(label=True, geoLocation=True),
-                                            ))
+                                                  eventInfo=EventInfoFlags(
+                                                      concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
+                                                  locationInfo=LocationInfoFlags(
+                                                      label=True, geoLocation=True),
+                                              ))
         )
 
         res = er.execQuery(q)
@@ -66,10 +69,11 @@ def extract_and_prepare_event_data(event_response):
     for event in event_response:
         # Filter concepts with a score over 50
         if 'concepts' in event:
-            filtered_concepts = [concept for concept in event['concepts'] if concept.get('score', 0) > 50]
+            filtered_concepts = [
+                concept for concept in event['concepts'] if concept.get('score', 0) > 50]
             event['concepts'] = filtered_concepts
         article_url = event['infoArticle']['eng']['url']
-        
+
         # check if the article URL already exists
         query = {
             "query": {
@@ -104,7 +108,7 @@ event_mapping = {
                     },
                     "location": {
                         "properties": {
-                            "country": {   
+                            "country": {
                                 "properties": {
                                     "label": {
                                         "properties": {
@@ -248,15 +252,15 @@ event_mapping = {
 #             "relevance": article.get('relevance'),
 #             # "truthfulness": MEDIA VALIDATOR HERE!!!
 #             "concepts": [
-#                 {"uri": concept.get('uri'), 
-#                  "label": concept.get('label', {}).get('eng'), 
+#                 {"uri": concept.get('uri'),
+#                  "label": concept.get('label', {}).get('eng'),
 #                  "score": concept.get('score'),
 #                  "type": concept.get('type')}
 #                 for concept in article.get('concepts', []) if concept.get('type') != 'loc'
 #             ],
 #             "locations": [
 #                 {
-#                  "label": concept.get('label', {}).get('eng'), 
+#                  "label": concept.get('label', {}).get('eng'),
 #                  "latitude": float(concept.get('location', {}).get('lat', None)),
 #                  "longitude": float(concept.get('location', {}).get('long', None))}
 #                 for concept in article.get('concepts', []) if concept.get('type') == 'loc' and concept.get('location')

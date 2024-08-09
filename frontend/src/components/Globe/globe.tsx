@@ -2,16 +2,18 @@ import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import gsap from "gsap";
-import getStarfield from "./src/getStarfield";
-import { getFresnelMat } from "./src/getFresnelMat";
-
-const getSentimentColor = (sentiment: number) => {
-  const color = new THREE.Color();
-  const power = 1.5;
-  const normalized = Math.pow((sentiment + 1) / 2, sentiment < 0 ? power : 1);
-  color.lerpColors(new THREE.Color(1, 0, 0), new THREE.Color(0, 1, 0), normalized);
-  return color;
-};
+import {
+  createEarthGroup,
+  createLights,
+  createClouds,
+  createGlow,
+  createStars,
+} from "./materials";
+import {
+  handleMouseDown,
+  handleMouseMove,
+  handleMouseUp,
+} from "./eventHandlers";
 
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -19,14 +21,20 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const rotationSpeedRef = useRef(0.0004);
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
-  const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(null);
-  const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
+  const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(
+    null
+  );
+  const [hoveredInfo, setHoveredInfo] = useState<{
+    title: string;
+    image: string;
+    url: string;
+  } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
 
   const isDragging = useRef(false);
 
   useEffect(() => {
-    markerRefs.current.forEach(marker => marker.parent?.remove(marker));
+    markerRefs.current.forEach((marker) => marker.parent?.remove(marker));
     markerRefs.current = [];
     setHoveredMarker(null);
     setHoveredInfo(null);
@@ -47,98 +55,25 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       mountRef.current.appendChild(renderer.domElement);
     }
 
-    const earthGroup = new THREE.Group();
+    // Create Earth and related objects
+    const earthGroup = createEarthGroup(articles, markerRefs, gsap);
     scene.add(earthGroup);
+
+    // Add lights, clouds, glow, and stars
+    const lightsMesh = createLights();
+    earthGroup.add(lightsMesh);
+
+    const cloudsMesh = createClouds();
+    earthGroup.add(cloudsMesh);
+
+    const glowMesh = createGlow();
+    earthGroup.add(glowMesh);
+
+    const stars = createStars();
+    scene.add(stars);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableZoom = false;
-
-    const loader = new THREE.TextureLoader();
-    const geometry = new THREE.SphereGeometry(1, 64, 64);
-    const material = new THREE.MeshPhongMaterial({
-      map: loader.load("/textures/2k_earth_daymap.jpg"),
-      specularMap: loader.load("/textures/2k_earth_specular_map.jpg"),
-      bumpMap: loader.load("/textures/01_earthbump1k.jpg"),
-      bumpScale: 5,
-    });
-
-    const earthMesh = new THREE.Mesh(geometry, material);
-    earthGroup.add(earthMesh);
-
-    const barrierGeometry = new THREE.SphereGeometry(1.2, 64, 64);
-    const barrierMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, opacity: 0.0, transparent: true });
-    const barrierMesh = new THREE.Mesh(barrierGeometry, barrierMaterial);
-    barrierMesh.visible = false;
-    scene.add(barrierMesh);
-
-    function latLongToVector3(lat: number, lon: number, radius = 1.02) {
-      const lonOffset = (Math.random() - 0.5) * 3;
-      const phi = (90 - lat) * (Math.PI / 180);
-      const theta = (lon + lonOffset + 180) * (Math.PI / 180);
-
-      return new THREE.Vector3(
-        -(radius * Math.sin(phi) * Math.cos(theta)),
-        radius * Math.cos(phi),
-        radius * Math.sin(phi) * Math.sin(theta)
-      );
-    }
-
-    articles.forEach((article) => {
-      if (article.mainLocation) {
-        const position = latLongToVector3(article.mainLocation.latitude, article.mainLocation.longitude);
-        const sentimentColor = getSentimentColor(article.sentiment);
-        const mainMarkerMaterial = new THREE.MeshBasicMaterial({ color: sentimentColor, transparent: true, opacity: 0.8 });
-        const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.3);
-        const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
-        mainMarker.position.copy(position);
-        mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
-        mainMarker.position.normalize().multiplyScalar(1.02);
-        mainMarker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
-        earthGroup.add(mainMarker);
-        markerRefs.current.push(mainMarker);
-        gsap.to(mainMarker.scale, { z: 1.2, duration: 2, repeat: -1, yoyo: true });
-      }
-
-      article.locations.forEach((location: { latitude: number; longitude: number; }) => {
-        const position = latLongToVector3(location.latitude, location.longitude);
-        const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.1);
-        const markerMaterial = new THREE.MeshBasicMaterial({ color: "#3CD2F9", transparent: true, opacity: 0.5 });
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.copy(position);
-        marker.lookAt(new THREE.Vector3(0, 0, 0));
-        marker.position.normalize().multiplyScalar(1.02);
-        marker.userData = { title: article.title, image: article.image, url: article.infoArticle.eng.url };
-        earthGroup.add(marker);
-        markerRefs.current.push(marker);
-        gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
-      });
-    });
-
-    const lightsMat = new THREE.MeshBasicMaterial({
-      map: loader.load("/textures/2k_earth_nightmap.jpg"),
-      blending: THREE.AdditiveBlending,
-    });
-    const lightsMesh = new THREE.Mesh(geometry, lightsMat);
-    earthGroup.add(lightsMesh);
-
-    const cloudsMat = new THREE.MeshStandardMaterial({
-      map: loader.load("/textures/2k_earth_clouds.jpg"),
-      transparent: true,
-      opacity: 0.3,
-      blending: THREE.AdditiveBlending,
-      alphaMap: loader.load("/textures/2k_earth_clouds.jpg"),
-    });
-    const cloudsMesh = new THREE.Mesh(geometry, cloudsMat);
-    cloudsMesh.scale.setScalar(1.003);
-    earthGroup.add(cloudsMesh);
-
-    const fresnelMat = getFresnelMat();
-    const glowMesh = new THREE.Mesh(geometry, fresnelMat);
-    glowMesh.scale.setScalar(1.01);
-    earthGroup.add(glowMesh);
-
-    const stars = getStarfield({ numStars: 2000 });
-    scene.add(stars);
 
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
     sunLight.position.set(-2, 0.5, 1.5);
@@ -156,11 +91,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       raycaster.current.setFromCamera(mouse.current, camera);
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
 
-      // Only handle markers that are facing the camera
       const cameraDirection = new THREE.Vector3();
       camera.getWorldDirection(cameraDirection);
 
-      const visibleIntersects = intersects.filter(intersect => {
+      const visibleIntersects = intersects.filter((intersect) => {
         const markerPosition = intersect.object.position.clone().normalize();
         return cameraDirection.dot(markerPosition) < 0;
       });
@@ -181,7 +115,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
 
       if (mouse.current.x && mouse.current.y) {
-        const barrierIntersects = raycaster.current.intersectObject(barrierMesh);
+        const barrierIntersects = raycaster.current.intersectObject(earthGroup);
         if (barrierIntersects.length > 0) {
           rotationSpeedRef.current = 0;
         } else {
@@ -201,56 +135,55 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
     };
+
     window.addEventListener("resize", handleWindowResize, false);
 
-    const handleMouseMove = (event: MouseEvent) => {
-      if (mountRef.current) {
-        const bounds = mountRef.current.getBoundingClientRect();
-        mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-        mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-        setInfoWindowPosition({ x: event.clientX - bounds.left + 50, y: event.clientY - bounds.top + 20 });
-        if (event.movementX !== 0 || event.movementY !== 0) {
-          isDragging.current = true;
-        }
-      }
-    };
-
-    const handleMouseDown = () => {
-      isDragging.current = false;
-    };
-
-    const handleMouseUp = () => {
-      if (!isDragging.current) {
-        console.log("Clicked");
-        raycaster.current.setFromCamera(mouse.current, camera);
-        const intersects = raycaster.current.intersectObjects(markerRefs.current);
-
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-
-        const visibleIntersects = intersects.filter(intersect => {
-          const markerPosition = intersect.object.position.clone().normalize();
-          return cameraDirection.dot(markerPosition) < 0;
-        });
-
-        if (visibleIntersects.length > 0) {
-          const intersectedMarker = visibleIntersects[0].object;
-          const url = intersectedMarker.userData.url;
-          if (url) {
-            window.open(url, "_blank");
-          }
-        }
-      }
-    };
-
-    renderer.domElement.addEventListener('mousedown', handleMouseDown, false);
-    renderer.domElement.addEventListener('mousemove', handleMouseMove, false);
-    renderer.domElement.addEventListener('mouseup', handleMouseUp, false);
+    renderer.domElement.addEventListener(
+      "mousedown",
+      (event) => handleMouseDown(event, isDragging),
+      false
+    );
+    renderer.domElement.addEventListener(
+      "mousemove",
+      (event) =>
+        handleMouseMove(event, mouse, isDragging, setInfoWindowPosition),
+      false
+    );
+    renderer.domElement.addEventListener(
+      "mouseup",
+      (event) =>
+        handleMouseUp(
+          event,
+          isDragging,
+          raycaster,
+          camera,
+          markerRefs,
+          mouse,
+          setHoveredMarker,
+          setHoveredInfo
+        ),
+      false
+    );
 
     return () => {
-      renderer.domElement.removeEventListener('mousedown', handleMouseDown);
-      renderer.domElement.removeEventListener('mousemove', handleMouseMove);
-      renderer.domElement.removeEventListener('mouseup', handleMouseUp);
+      renderer.domElement.removeEventListener("mousedown", (event) =>
+        handleMouseDown(event, isDragging)
+      );
+      renderer.domElement.removeEventListener("mousemove", (event) =>
+        handleMouseMove(event, mouse, isDragging, setInfoWindowPosition)
+      );
+      renderer.domElement.removeEventListener("mouseup", (event) =>
+        handleMouseUp(
+          event,
+          isDragging,
+          raycaster,
+          camera,
+          markerRefs,
+          mouse,
+          setHoveredMarker,
+          setHoveredInfo
+        )
+      );
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, [articles]);
@@ -281,7 +214,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           -ms-user-select: none; /* Edge */
         }
         .cropped-globe {
-          clip-path: inset(100px 0px 150px 0px); /* Crop 100px from the bottom */
+          clip-path: inset(
+            100px 0px 150px 0px
+          ); /* Crop 150px from the bottom */
         }
         .info-window {
           background: rgba(0, 0, 0, 0.7);

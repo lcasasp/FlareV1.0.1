@@ -79,8 +79,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   }, []);
 
   return (
-    <div className="flex flex-col items-center my-8" 
-      style={{ fontFamily: "Copperplate, fantasy" }}>
+    <div
+      className="flex flex-col items-center my-8"
+      style={{ fontFamily: "Copperplate, fantasy" }}
+    >
       <div className="flex justify-center w-full mb-4">
         <input
           type="text"
