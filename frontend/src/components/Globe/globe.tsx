@@ -23,6 +23,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [hoveredInfo, setHoveredInfo] = useState<{ title: string; image: string; url: string } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
 
+  const isDragging = useRef(false);
 
   useEffect(() => {
     markerRefs.current.forEach(marker => marker.parent?.remove(marker));
@@ -154,8 +155,18 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
       raycaster.current.setFromCamera(mouse.current, camera);
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
-      if (intersects.length > 0) {
-        const intersectedMarker = intersects[0].object;
+
+      // Only handle markers that are facing the camera
+      const cameraDirection = new THREE.Vector3();
+      camera.getWorldDirection(cameraDirection);
+
+      const visibleIntersects = intersects.filter(intersect => {
+        const markerPosition = intersect.object.position.clone().normalize();
+        return cameraDirection.dot(markerPosition) < 0;
+      });
+
+      if (visibleIntersects.length > 0) {
+        const intersectedMarker = visibleIntersects[0].object;
         if (intersectedMarker !== hoveredMarker) {
           setHoveredMarker(intersectedMarker);
           setHoveredInfo({
@@ -198,27 +209,48 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
         mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
         setInfoWindowPosition({ x: event.clientX - bounds.left + 50, y: event.clientY - bounds.top + 20 });
-      }
-    };
-
-    const handleMouseDown = () => {
-      raycaster.current.setFromCamera(mouse.current, camera);
-      const intersects = raycaster.current.intersectObjects(markerRefs.current);
-      if (intersects.length > 0) {
-        const intersectedMarker = intersects[0].object;
-        const url = intersectedMarker.userData.url;
-        if (url) {
-          window.open(url, "_blank");
+        if (event.movementX !== 0 || event.movementY !== 0) {
+          isDragging.current = true;
         }
       }
     };
 
-    renderer.domElement.addEventListener('mouseDown', handleMouseDown, false);
+    const handleMouseDown = () => {
+      isDragging.current = false;
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging.current) {
+        console.log("Clicked");
+        raycaster.current.setFromCamera(mouse.current, camera);
+        const intersects = raycaster.current.intersectObjects(markerRefs.current);
+
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
+
+        const visibleIntersects = intersects.filter(intersect => {
+          const markerPosition = intersect.object.position.clone().normalize();
+          return cameraDirection.dot(markerPosition) < 0;
+        });
+
+        if (visibleIntersects.length > 0) {
+          const intersectedMarker = visibleIntersects[0].object;
+          const url = intersectedMarker.userData.url;
+          if (url) {
+            window.open(url, "_blank");
+          }
+        }
+      }
+    };
+
+    renderer.domElement.addEventListener('mousedown', handleMouseDown, false);
     renderer.domElement.addEventListener('mousemove', handleMouseMove, false);
+    renderer.domElement.addEventListener('mouseup', handleMouseUp, false);
 
     return () => {
-      renderer.domElement.removeEventListener('mouseDown', handleMouseDown);
+      renderer.domElement.removeEventListener('mousedown', handleMouseDown);
       renderer.domElement.removeEventListener('mousemove', handleMouseMove);
+      renderer.domElement.removeEventListener('mouseup', handleMouseUp);
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, [articles]);
