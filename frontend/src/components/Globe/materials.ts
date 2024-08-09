@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { getFresnelMat } from "./src/getFresnelMat";
 import getStarfield from "./src/getStarfield";
+import { clamp } from "three/src/math/MathUtils.js";
  
 export const createEarthGroup = (
   articles: any[],
@@ -57,7 +58,14 @@ export const createEarthGroup = (
         transparent: true,
         opacity: 0.8,
       });
-      const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.3);
+
+      const markerHeight = article.compositeScore
+        ? Math.min(0.01 + article.compositeScore / 1000, 0.3) * 5
+        : 0.1;
+      const maxMarkerHeight = .6;
+      const clampedMarkerHeight = Math.min(markerHeight, maxMarkerHeight);
+
+      const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, clampedMarkerHeight);
       const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
       mainMarker.position.copy(position);
       mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
@@ -70,8 +78,8 @@ export const createEarthGroup = (
       earthGroup.add(mainMarker);
       markerRefs.current.push(mainMarker);
       gsap.to(mainMarker.scale, {
-        z: 1.2,
-        duration: 2,
+        z: 1.4,
+        duration: 4,
         repeat: -1,
         yoyo: true,
       });
@@ -87,7 +95,7 @@ export const createEarthGroup = (
         const markerMaterial = new THREE.MeshBasicMaterial({
           color: "#3CD2F9",
           transparent: true,
-          opacity: 0.5,
+          opacity: 0.4,
         });
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.position.copy(position);

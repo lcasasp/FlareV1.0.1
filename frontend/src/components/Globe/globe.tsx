@@ -114,8 +114,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         setHoveredInfo(null);
       }
 
+      //Stops spinning globe if hovering over globe or markers
       if (mouse.current.x && mouse.current.y) {
-        const barrierIntersects = raycaster.current.intersectObject(earthGroup);
+        const barrierIntersects = raycaster.current.intersectObjects([earthGroup, ...markerRefs.current]);
         if (barrierIntersects.length > 0) {
           rotationSpeedRef.current = 0;
         } else {

@@ -40,6 +40,7 @@ interface Article {
       url: string;
     };
   };
+  compositeScore: number;
   totalArticleCount: number;
 }
 
@@ -87,6 +88,11 @@ const Home: React.FC = () => {
           };
         });
 
+      const compositeScore =
+        0.3 * article.totalArticleCount +
+        0.4 * article.socialScore +
+        0.3 * article.wgt;
+
       return {
         ...article,
         title,
@@ -94,6 +100,7 @@ const Home: React.FC = () => {
         summary,
         mainLocation,
         locations,
+        compositeScore,
       };
     });
 
@@ -105,28 +112,20 @@ const Home: React.FC = () => {
 
   const computeTopArticles = (articles: Article[], category: string) => {
     let filteredArticles = articles;
-
+  
     if (category !== "All" && category !== "Breaking") {
       filteredArticles = articles.filter((article) =>
         article.categories.some((cat) => cat.label.includes(category))
       );
     }
-
+  
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
+  
     const topStories = filteredArticles
-      .filter((article: any) => new Date(article.eventDate) >= sevenDaysAgo)
-      .map((article: any) => ({
-        ...article,
-        compositeScore:
-          0.3 * article.totalArticleCount +
-          0.4 * article.socialScore +
-          0.3 * article.wgt,
-      }))
-      .sort((a: any, b: any) => b.compositeScore - a.compositeScore)
+      .sort((a, b) => b.compositeScore - a.compositeScore)
       .slice(0, 25); // Top 25 stories
-
+  
     setTopArticles(topStories);
   };
 
