@@ -10,6 +10,7 @@ app = Flask(__name__)
 
 CORS(app)
 
+
 @app.route('/articles', methods=['GET'])
 def get_articles():
     result = es.search(index="events", body={
@@ -34,7 +35,7 @@ def get_articles():
 def search_events():
     query = request.args.get('query', default="*", type=str)
     logging.debug(f"Received query: {query}")
-    
+
     current_date = datetime.now().strftime('%Y-%m-%d')
     search_body = {
         "query": {
@@ -55,7 +56,7 @@ def search_events():
                             {
                                 "range": {
                                     "eventDate": {
-                                        "gte": "now-30d/d" 
+                                        "gte": "now-30d/d"
                                     }
                                 }
                             }
@@ -97,7 +98,7 @@ def fetch_and_index_events():
     pages = request.args.get('pages', '1-1')
     categories = request.args.get('categories')  # expecting single value
     concepts = request.args.getlist('concepts')  # expecting multiple values
-    
+
     page_range = pages.split('-')
     start_page = int(page_range[0])
     end_page = int(page_range[1]) if len(page_range) > 1 else start_page
@@ -105,7 +106,8 @@ def fetch_and_index_events():
     if not es.indices.exists(index="events"):
         es.indices.create(index="events", ignore=400)
 
-    events = fetch_events(categories=categories, concepts=concepts, start_page=start_page, end_page=end_page)
+    events = fetch_events(categories=categories, concepts=concepts,
+                          start_page=start_page, end_page=end_page)
     processed_events = extract_and_prepare_event_data(events)
 
     for event in processed_events:

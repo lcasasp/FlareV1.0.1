@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 
 const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -16,7 +16,7 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
   }, []);
 
   const startTimer = () => {
-    stopTimer(); 
+    stopTimer();
     timerRef.current = setInterval(handleNextClick, 5000);
   };
 
@@ -48,20 +48,32 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
     displayedArticles.push(...events.slice(0, 5 - displayedArticles.length));
   }
 
-
   return (
     <div className="news-headline-system">
       <div className="conveyor-belt-container">
-        <button className="nav-button prev-button" onClick={handlePrevClick}>&#10094;</button>
-        <div className="conveyor-belt" style={{ transform: `translateX(-${currentIndex * 20}%)` }}>
+        <button className="nav-button prev-button" onClick={handlePrevClick}>
+          &#10094;
+        </button>
+        <div
+          className="conveyor-belt"
+          style={{ transform: `translateX(-${currentIndex * 20}%)` }}
+        >
           {events.map((article, index) => (
-            <div key={index} className="article" onClick={() => window.open(article.infoArticle.eng.url, '_blank')}>
+            <div
+              key={index}
+              className="article"
+              onClick={() => window.open(article.infoArticle.eng.url, "_blank")}
+            >
               <img src={article.image} alt={article.title} />
-              <h4><b>{article.title}</b></h4>
+              <h4>
+                <b>{article.title}</b>
+              </h4>
             </div>
           ))}
         </div>
-        <button className="nav-button next-button" onClick={handleNextClick}>&#10095;</button>
+        <button className="nav-button next-button" onClick={handleNextClick}>
+          &#10095;
+        </button>
       </div>
     </div>
   );

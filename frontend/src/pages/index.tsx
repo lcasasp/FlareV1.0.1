@@ -51,7 +51,11 @@ const Home: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [topArticles, setTopArticles] = useState<Article[]>([]);
-  const [filters, setFilters] = useState<{ location: string; concept: string; category: string }>({ location: "Any", concept: "Any", category: "All" });
+  const [filters, setFilters] = useState<{
+    location: string;
+    concept: string;
+    category: string;
+  }>({ location: "Any", concept: "Any", category: "All" });
 
   const fetchArticles = async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
@@ -60,21 +64,26 @@ const Home: React.FC = () => {
       const summary = article.summary.eng;
       const image = article.images[0];
 
-      const mainLocation = article.location && article.location.lat && article.location.long ? {
-        label: article.location.label.eng,
-        latitude: article.location.lat,
-        longitude: article.location.long
-      } : undefined;
+      const mainLocation =
+        article.location && article.location.lat && article.location.long
+          ? {
+              label: article.location.label.eng,
+              latitude: article.location.lat,
+              longitude: article.location.long,
+            }
+          : undefined;
 
       const locations = article.concepts
         .filter((c: any) => c.type === "loc" && c.score > 60)
         .map((loc: any) => {
-          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+          const latitude =
+            loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude =
+            loc.location && loc.location.long ? loc.location.long : 0;
           return {
             label: loc.label.eng,
             latitude,
-            longitude
+            longitude,
           };
         });
 
@@ -84,22 +93,22 @@ const Home: React.FC = () => {
         image,
         summary,
         mainLocation,
-        locations
+        locations,
       };
     });
 
     setArticles(formattedData);
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
-    computeTopArticles(formattedData, 'All');
+    computeTopArticles(formattedData, "All");
   };
 
   const computeTopArticles = (articles: Article[], category: string) => {
     let filteredArticles = articles;
 
-    if (category !== 'All' && category !== 'Breaking') {
-      filteredArticles = articles.filter(article =>
-      article.categories.some(cat => cat.label.includes(category))
+    if (category !== "All" && category !== "Breaking") {
+      filteredArticles = articles.filter((article) =>
+        article.categories.some((cat) => cat.label.includes(category))
       );
     }
 
@@ -110,7 +119,10 @@ const Home: React.FC = () => {
       .filter((article: any) => new Date(article.eventDate) >= sevenDaysAgo)
       .map((article: any) => ({
         ...article,
-        compositeScore: (0.3 * article.totalArticleCount) + (0.4 * article.socialScore) + (0.3 * article.wgt)
+        compositeScore:
+          0.3 * article.totalArticleCount +
+          0.4 * article.socialScore +
+          0.3 * article.wgt,
       }))
       .sort((a: any, b: any) => b.compositeScore - a.compositeScore)
       .slice(0, 25); // Top 25 stories
@@ -129,25 +141,32 @@ const Home: React.FC = () => {
     let filtered = articles;
 
     if (updatedFilters.location && updatedFilters.location !== "Any") {
-      filtered = filtered.filter(article =>
-        (article.mainLocation && article.mainLocation.label === updatedFilters.location) ||
-        article.locations.some(location => location.label === updatedFilters.location)
+      filtered = filtered.filter(
+        (article) =>
+          (article.mainLocation &&
+            article.mainLocation.label === updatedFilters.location) ||
+          article.locations.some(
+            (location) => location.label === updatedFilters.location
+          )
       );
     }
 
     if (updatedFilters.concept && updatedFilters.concept !== "Any") {
-      filtered = filtered.filter(article =>
-        article.concepts.some(concept => concept.label.eng === updatedFilters.concept)
+      filtered = filtered.filter((article) =>
+        article.concepts.some(
+          (concept) => concept.label.eng === updatedFilters.concept
+        )
       );
     }
 
     if (updatedFilters.category && updatedFilters.category !== "All") {
-      if (updatedFilters.category === 'Breaking') {
+      if (updatedFilters.category === "Breaking") {
         filtered = topArticles;
-      }
-      else {
-        filtered = filtered.filter(article =>
-          article.categories.some(cat => cat.label.includes(updatedFilters.category))
+      } else {
+        filtered = filtered.filter((article) =>
+          article.categories.some((cat) =>
+            cat.label.includes(updatedFilters.category)
+          )
         );
         filtered.sort((a, b) => b.wgt - a.wgt);
       }
@@ -167,22 +186,29 @@ const Home: React.FC = () => {
       const summary = article._source.summary.eng;
       const image = article._source.images[0];
 
-      const mainLocation = article._source.location && article._source.location.lat && article._source.location.long ? {
-        label: article._source.location.label.eng,
-        latitude: article._source.location.lat,
-        longitude: article._source.location.long
-      } : undefined;
+      const mainLocation =
+        article._source.location &&
+        article._source.location.lat &&
+        article._source.location.long
+          ? {
+              label: article._source.location.label.eng,
+              latitude: article._source.location.lat,
+              longitude: article._source.location.long,
+            }
+          : undefined;
 
       //Only care about locations with score over 60
       const locations = article._source.concepts
         .filter((c: any) => c.type === "loc" && c.score > 60)
         .map((loc: any) => {
-          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+          const latitude =
+            loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude =
+            loc.location && loc.location.long ? loc.location.long : 0;
           return {
             label: loc.label.eng,
             latitude,
-            longitude
+            longitude,
           };
         });
 
@@ -192,7 +218,7 @@ const Home: React.FC = () => {
         image,
         summary,
         mainLocation,
-        locations
+        locations,
       };
     });
     setArticles(formattedData);
@@ -205,19 +231,25 @@ const Home: React.FC = () => {
     let sortedArticles = [...filteredArticles];
 
     switch (sortCriteria) {
-      case 'relevance':
+      case "relevance":
         sortedArticles = articles;
         break;
-      case 'date':
-        sortedArticles.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
+      case "date":
+        sortedArticles.sort(
+          (a, b) =>
+            new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime()
+        );
         break;
-      case 'sentiment':
+      case "sentiment":
         sortedArticles.sort((a, b) => b.sentiment - a.sentiment);
         break;
-      case 'date-desc':
-        sortedArticles.sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime());
+      case "date-desc":
+        sortedArticles.sort(
+          (a, b) =>
+            new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()
+        );
         break;
-      case 'sentiment-desc':
+      case "sentiment-desc":
         sortedArticles.sort((a, b) => a.sentiment - b.sentiment);
         break;
       default:
@@ -229,7 +261,7 @@ const Home: React.FC = () => {
 
   const handleCategorySelect = (category: string) => {
     if (filters.category === category) {
-      handleFilterChange({ category: 'All' });
+      handleFilterChange({ category: "All" });
     } else {
       handleFilterChange({ category });
     }
@@ -249,36 +281,52 @@ const Home: React.FC = () => {
     setCurrentPage(page);
   };
 
-  const availableConcepts = Array.from(new Set(["Any", ...articles.flatMap((article) => article.concepts.map((concept) => concept.label.eng))]));
-  const availableLocations = Array.from(new Set(["Any", ...articles.flatMap((article) => article.locations.map((location) => location.label)), ...articles.flatMap((article) => article.mainLocation ? [article.mainLocation.label] : [])]));
+  const availableConcepts = Array.from(
+    new Set([
+      "Any",
+      ...articles.flatMap((article) =>
+        article.concepts.map((concept) => concept.label.eng)
+      ),
+    ])
+  );
+  const availableLocations = Array.from(
+    new Set([
+      "Any",
+      ...articles.flatMap((article) =>
+        article.locations.map((location) => location.label)
+      ),
+      ...articles.flatMap((article) =>
+        article.mainLocation ? [article.mainLocation.label] : []
+      ),
+    ])
+  );
 
   return (
     <div className="container mx-auto p-4">
-      <Header onCategorySelect={handleCategorySelect}/>
+      <Header onCategorySelect={handleCategorySelect} />
       <Headlines articles={topArticles} />
       <div className="globe-and-content">
-      <ThreeGlobe articles={filteredArticles} />
-      <div className="content-below">
-        <SearchBar 
-          onResults={handleSearchResults} 
-          onFilterChange={handleFilterChange} 
-          onSortChange={handleSortChange} 
-          availableConcepts={availableConcepts} 
-          availableLocations={availableLocations} 
-        />
-        {currentArticles.map((article, index) => (
-          <Article key={index} article={article} />
-        ))}
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        <ThreeGlobe articles={filteredArticles} />
+        <div className="content-below">
+          <SearchBar
+            onResults={handleSearchResults}
+            onFilterChange={handleFilterChange}
+            onSortChange={handleSortChange}
+            availableConcepts={availableConcepts}
+            availableLocations={availableLocations}
+          />
+          {currentArticles.map((article, index) => (
+            <Article key={index} article={article} />
+          ))}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </div>
       </div>
-    </div>
     </div>
   );
 };
 
 export default Home;
-

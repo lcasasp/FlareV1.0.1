@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 
 interface HeaderProps {
   onCategorySelect: (category: string) => void;
 }
 
-const categories = ["All", "Breaking", "Business", "Technology", "Science", "Society"];
+const categories = [
+  "All",
+  "Breaking",
+  "Business",
+  "Technology",
+  "Science",
+  "Society",
+];
 
 const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState("All");
 
   const handleCategoryClick = (category: string) => {
-    const newCategory = category === activeCategory ? 'All' : category;
+    const newCategory = category === activeCategory ? "All" : category;
     setActiveCategory(newCategory);
     onCategorySelect(newCategory);
   };
@@ -28,7 +35,9 @@ const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
               key={category}
               onClick={() => handleCategoryClick(category)}
               className={`px-4 py-2 mx-2 rounded transition-colors duration-200 ${
-                activeCategory === category ? 'categories-active text-white' : 'text-gray-700 hover:bg-gray-300'
+                activeCategory === category
+                  ? "categories-active text-white"
+                  : "text-gray-700 hover:bg-gray-300"
               }`}
             >
               {category}
@@ -36,8 +45,15 @@ const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
           ))}
         </div>
         <nav className="flex items-center">
-          <a href="/" className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200">About</a>
-          <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200">Donate</button>
+          <a
+            href="/"
+            className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200"
+          >
+            About
+          </a>
+          <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200">
+            Donate
+          </button>
         </nav>
       </div>
     </header>

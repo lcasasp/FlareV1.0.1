@@ -1,7 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 const useMousePosition = (ref: React.RefObject<HTMLElement>) => {
-  const [position, setPosition] = useState({ x: 0, y: 0, rotateX: 0, rotateY: 0 });
+  const [position, setPosition] = useState({
+    x: 0,
+    y: 0,
+    rotateX: 0,
+    rotateY: 0,
+  });
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -21,12 +26,12 @@ const useMousePosition = (ref: React.RefObject<HTMLElement>) => {
     };
 
     if (ref.current) {
-      ref.current.addEventListener('mousemove', handleMouseMove);
+      ref.current.addEventListener("mousemove", handleMouseMove);
     }
 
     return () => {
       if (ref.current) {
-        ref.current.removeEventListener('mousemove', handleMouseMove);
+        ref.current.removeEventListener("mousemove", handleMouseMove);
       }
     };
   }, [ref]);
