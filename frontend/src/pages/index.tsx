@@ -90,8 +90,8 @@ const Home: React.FC = () => {
 
       const compositeScore =
         0.3 * article.totalArticleCount +
-        0.4 * article.socialScore +
-        0.3 * article.wgt;
+        0.3 * article.socialScore +
+        0.4 * article.wgt;
 
       return {
         ...article,
@@ -172,15 +172,20 @@ const Home: React.FC = () => {
     }
 
     setFilteredArticles(filtered);
-    setCurrentPage(1); // Reset to the first page on filter change
+    setCurrentPage(1);
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
 
   const handleSearchResults = async (query: string) => {
+    if (query === "") {
+      fetchArticles();
+      return;
+    }
     const response = await axios.get(
       `http://127.0.0.1:5000/search?query=${query}`
     );
     const formattedData = response.data.map((article: any) => {
+      const score = article._score
       const title = article._source.title.eng;
       const summary = article._source.summary.eng;
       const image = article._source.images[0];
@@ -211,6 +216,12 @@ const Home: React.FC = () => {
           };
         });
 
+      const compositeScore =
+        0.2 * article._source.totalArticleCount +
+        0.2 * article._source.socialScore +
+        0.2 * article._source.wgt;
+        0.4 * score;
+
       return {
         ...article._source,
         title,
@@ -218,11 +229,12 @@ const Home: React.FC = () => {
         summary,
         mainLocation,
         locations,
+        compositeScore,
       };
     });
     setArticles(formattedData);
     setFilteredArticles(formattedData);
-    setCurrentPage(1); // Reset to the first page on new search results
+    setCurrentPage(1);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
   };
 

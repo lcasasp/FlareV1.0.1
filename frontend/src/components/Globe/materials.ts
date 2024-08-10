@@ -60,7 +60,7 @@ export const createEarthGroup = (
       });
 
       const markerHeight = article.compositeScore
-        ? Math.min(0.01 + article.compositeScore / 1000, 0.3) * 5
+        ? Math.min(0.01 + article.compositeScore / 1000, 0.5) * 5
         : 0.1;
       const maxMarkerHeight = .6;
       const clampedMarkerHeight = Math.min(markerHeight, maxMarkerHeight);
@@ -75,14 +75,14 @@ export const createEarthGroup = (
         image: article.image,
         url: article.infoArticle.eng.url,
       };
-      earthGroup.add(mainMarker);
-      markerRefs.current.push(mainMarker);
       gsap.to(mainMarker.scale, {
         z: 1.4,
         duration: 4,
         repeat: -1,
         yoyo: true,
       });
+      earthGroup.add(mainMarker);
+      markerRefs.current.push(mainMarker);
     }
 
     article.locations.forEach(
@@ -106,9 +106,9 @@ export const createEarthGroup = (
           image: article.image,
           url: article.infoArticle.eng.url,
         };
+        gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
         earthGroup.add(marker);
         markerRefs.current.push(marker);
-        gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
       }
     );
   });

@@ -48,9 +48,19 @@ const SearchBar: React.FC<SearchBarProps> = ({
     onFilterChange(filters);
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent) => {
+  const handleKeyDown = (event: React.KeyboardEvent, field: string) => {
     if (event.key === "Enter") {
-      handleSearch();
+      if (field === "location" && location.trim() === "") {
+        setLocation("");
+        handleFilterChange("Any", concept);
+        setShowLocationOptions(false);
+      } else if (field === "concept" && concept.trim() === "") {
+        setConcept("");
+        handleFilterChange(location, "Any");
+        setShowConceptOptions(false);
+      } else if (field === "search") {
+        handleSearch();
+      }
     }
   };
 
@@ -89,7 +99,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           placeholder="Search for articles..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyDown}
+          onKeyDown={(e) => handleKeyDown(e, "search")}
           className="p-2 w-2/3 border rounded-l-full focus:outline-none"
           style={{ fontFamily: "Times New Roman" }}
         />
@@ -114,6 +124,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               setLocation(e.target.value);
               setShowLocationOptions(true);
             }}
+            onKeyDown={(e) => handleKeyDown(e, "location")}
             className="p-2 w-full border rounded"
           />
           {showLocationOptions && location && (
@@ -122,7 +133,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <li
                   key={index}
                   onClick={() => {
-                    handleFilterChange(loc, "");
+                    handleFilterChange(loc, concept);
                     setLocation(loc);
                     setShowLocationOptions(false);
                   }}
@@ -147,6 +158,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
               setConcept(e.target.value);
               setShowConceptOptions(true);
             }}
+            onKeyDown={(e) => handleKeyDown(e, "concept")}
             className="p-2 w-full border rounded"
           />
           {showConceptOptions && concept && (
@@ -155,7 +167,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
                 <li
                   key={index}
                   onClick={() => {
-                    handleFilterChange("", con);
+                    handleFilterChange(location, con);
                     setConcept(con);
                     setShowConceptOptions(false);
                   }}
