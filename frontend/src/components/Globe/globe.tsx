@@ -87,8 +87,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       earthGroup.rotation.y += rotationSpeedRef.current;
       cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
       stars.rotation.y -= rotationSpeedRef.current / 10;
-
+      
       raycaster.current.setFromCamera(mouse.current, camera);
+
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
 
       const cameraDirection = new THREE.Vector3();
@@ -182,7 +183,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           markerRefs,
           mouse,
           setHoveredMarker,
-          setHoveredInfo
+          setHoveredInfo,
         )
       );
       mountRef.current?.removeChild(renderer.domElement);
@@ -228,6 +229,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           pointer-events: none;
           max-width: 200px;
           position: absolute;
+          z-index: 2000;
         }
 
         .info-window h3 {

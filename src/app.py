@@ -46,9 +46,10 @@ def search_events():
                             {
                                 "multi_match": {
                                     "query": query,
-                                    "fields": ["title.eng^3", "summary.eng", "concepts.label.eng^3"],
-                                    "type": "cross_fields",
-                                    "operator": "and"
+                                    "fields": ["title.eng^3", "summary.eng", "concepts.label.eng^2"],
+                                    "type": "best_fields",
+                                    "operator": "or",
+                                    "fuzziness": "AUTO"
                                 }
                             }
                         ],
@@ -66,9 +67,9 @@ def search_events():
                 "functions": [
                     {
                         "field_value_factor": {
-                            "field": "relevance",
+                            "field": "wgt",
                             "modifier": "log1p",
-                            "factor": 0.1  # Adjust to boost by relevance
+                            "factor": 0.1  # Adjust to boost by wgt
                         }
                     },
                     {
