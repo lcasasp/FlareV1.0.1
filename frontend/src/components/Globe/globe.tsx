@@ -34,17 +34,20 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const isDragging = useRef(false);
 
   useEffect(() => {
+    // Clean up previous markers
     markerRefs.current.forEach((marker) => marker.parent?.remove(marker));
     markerRefs.current = [];
     setHoveredMarker(null);
     setHoveredInfo(null);
 
+    // Set up scene
     const w = mountRef.current?.clientWidth || window.innerWidth;
     const h = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
     camera.position.z = 3;
 
+    // Set up renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setClearColor(0x000000, 0);
     renderer.setSize(w, h);
@@ -57,9 +60,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     // Create Earth and related objects
     const earthGroup = createEarthGroup(articles, markerRefs, gsap);
+    earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
     scene.add(earthGroup);
 
-    // Add lights, clouds, glow, and stars
     const lightsMesh = createLights();
     earthGroup.add(lightsMesh);
 
@@ -79,8 +82,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     sunLight.position.set(-2, 0.5, 1.5);
     scene.add(sunLight);
 
-    earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
-
+    // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
 
@@ -130,6 +132,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     animate();
 
+
     const handleWindowResize = () => {
       const newWidth = mountRef.current?.clientWidth || window.innerWidth;
       const newHeight = mountRef.current?.clientHeight || window.innerHeight;
@@ -167,6 +170,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       false
     );
 
+    // Clean up
     return () => {
       renderer.domElement.removeEventListener("mousedown", (event) =>
         handleMouseDown(event, isDragging)
