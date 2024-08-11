@@ -45,7 +45,28 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const h = mountRef.current?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
-    camera.position.z = 3;
+
+    const initializeCamera = () => {
+      camera.position.set(0, 0, 3);
+      camera.lookAt(new THREE.Vector3(0, 0, 0));
+    };
+
+    // Adjust camera position based on screen width for responsiveness
+    const updateCameraPosition = () => {
+      const width = window.innerWidth;
+      if (width < 450) {
+        camera.position.set(0, 0, 4);
+      } else if (width < 600) {
+        camera.position.set(0, 0, 3.5);
+      } else {
+        camera.position.set(0, 0, 3);
+      }
+      camera.updateProjectionMatrix();
+    };
+
+    // Initial camera setup
+    initializeCamera();
+    updateCameraPosition();
 
     // Set up renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -53,10 +74,15 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     renderer.setSize(w, h);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-
     if (mountRef.current) {
       mountRef.current.appendChild(renderer.domElement);
     }
+
+    // Set up controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.update();
+    controls.enableZoom = false;
 
     // Create Earth and related objects
     const earthGroup = createEarthGroup(articles, markerRefs, gsap);
@@ -75,9 +101,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const stars = createStars();
     scene.add(stars);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableZoom = false;
-
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
     sunLight.position.set(-2, 0.5, 1.5);
     scene.add(sunLight);
@@ -89,7 +112,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       earthGroup.rotation.y += rotationSpeedRef.current;
       cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
       stars.rotation.y -= rotationSpeedRef.current / 10;
-      
+
       raycaster.current.setFromCamera(mouse.current, camera);
 
       const intersects = raycaster.current.intersectObjects(markerRefs.current);
@@ -119,7 +142,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
       //Stops spinning globe if hovering over globe or markers
       if (mouse.current.x && mouse.current.y) {
-        const barrierIntersects = raycaster.current.intersectObjects([earthGroup, ...markerRefs.current]);
+        const barrierIntersects = raycaster.current.intersectObjects([
+          earthGroup,
+          ...markerRefs.current,
+        ]);
         if (barrierIntersects.length > 0) {
           rotationSpeedRef.current = 0;
         } else {
@@ -132,13 +158,16 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     animate();
 
-
+    // Set up event listeners
     const handleWindowResize = () => {
       const newWidth = mountRef.current?.clientWidth || window.innerWidth;
       const newHeight = mountRef.current?.clientHeight || window.innerHeight;
       camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
+      updateCameraPosition();
+
+      controls.target.set(0, 0, 0);
+      controls.update();
     };
 
     window.addEventListener("resize", handleWindowResize, false);
@@ -187,42 +216,39 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           markerRefs,
           mouse,
           setHoveredMarker,
-          setHoveredInfo,
+          setHoveredInfo
         )
       );
       mountRef.current?.removeChild(renderer.domElement);
     };
   }, [articles]);
 
+
   return (
-    <div ref={mountRef} className="background-globe cropped-globe">
-      {hoveredInfo && (
-        <div
-          className="info-window"
-          style={{ top: infoWindowPosition.y, left: infoWindowPosition.x }}
-        >
-          <h3>{hoveredInfo.title}</h3>
-          <img src={hoveredInfo.image} alt={hoveredInfo.title} />
-        </div>
-      )}
+    <div className="three-globe-container">
+      <div ref={mountRef} className="background-globe cropped-globe">
+        {hoveredInfo && (
+          <div
+            className="info-window"
+            style={{ top: infoWindowPosition.y, left: infoWindowPosition.x }}
+          >
+            <h3>{hoveredInfo.title}</h3>
+            <img src={hoveredInfo.image} alt={hoveredInfo.title} />
+          </div>
+        )}
+      </div>
       <style jsx>{`
-        .container {
+        .three-globe-container {
           position: relative;
         }
         .background-globe {
           overflow: hidden;
           position: relative;
           transform: translateY(-100px);
-
-          user-select: none; /* Disable text selection */
-          -webkit-user-select: none; /* Safari */
-          -moz-user-select: none; /* Firefox */
-          -ms-user-select: none; /* Edge */
+          user-select: none;
         }
         .cropped-globe {
-          clip-path: inset(
-            100px 0px 150px 0px
-          ); /* Crop 150px from the bottom */
+          clip-path: inset(100px 0px 150px 0px);
         }
         .info-window {
           background: rgba(0, 0, 0, 0.7);
@@ -235,12 +261,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           position: absolute;
           z-index: 2000;
         }
-
         .info-window h3 {
           margin: 0 0 5px;
           font-size: 16px;
         }
-
         .info-window img {
           width: 100%;
           border-radius: 4px;
