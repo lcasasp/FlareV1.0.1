@@ -240,6 +240,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       <style jsx>{`
         .three-globe-container {
           position: relative;
+          bottom: 0;
         }
         .background-globe {
           overflow: hidden;
