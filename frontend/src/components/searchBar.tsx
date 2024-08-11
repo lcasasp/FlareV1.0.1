@@ -93,14 +93,14 @@ const SearchBar: React.FC<SearchBarProps> = ({
       className="flex flex-col items-center my-8"
       style={{ fontFamily: "Copperplate, fantasy" }}
     >
-      <div className="flex justify-center w-full mb-4">
+      <div className="search-bar-container flex justify-center w-full mb-4">
         <input
           type="text"
           placeholder="Search for articles..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "search")}
-          className="p-2 w-2/3 border rounded-l-full focus:outline-none"
+          className="p-2 w-2/3 border rounded-l-full focus:outline-none pl-8"
           style={{ fontFamily: "Times New Roman" }}
         />
         <button
