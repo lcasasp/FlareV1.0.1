@@ -6,6 +6,7 @@ import ThreeGlobe from "../components/Globe/globe";
 import SearchBar from "../components/searchBar";
 import Pagination from "../components/pagination";
 import Headlines from "@/components/headlines";
+import Footer from "@/components/footer";
 
 interface Article {
   title: string;
@@ -112,20 +113,20 @@ const Home: React.FC = () => {
 
   const computeTopArticles = (articles: Article[], category: string) => {
     let filteredArticles = articles;
-  
+
     if (category !== "All" && category !== "Breaking") {
       filteredArticles = articles.filter((article) =>
         article.categories.some((cat) => cat.label.includes(category))
       );
     }
-  
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
+
     const topStories = filteredArticles
       .sort((a, b) => b.compositeScore - a.compositeScore)
       .slice(0, 25); // Top 25 stories
-  
+
     setTopArticles(topStories);
   };
 
@@ -185,7 +186,7 @@ const Home: React.FC = () => {
       `http://127.0.0.1:5000/search?query=${query}`
     );
     const formattedData = response.data.map((article: any) => {
-      const score = article._score
+      const score = article._score;
       const title = article._source.title.eng;
       const summary = article._source.summary.eng;
       const image = article._source.images[0];
@@ -220,7 +221,7 @@ const Home: React.FC = () => {
         0.2 * article._source.totalArticleCount +
         0.2 * article._source.socialScore +
         0.2 * article._source.wgt;
-        0.4 * score;
+      0.4 * score;
 
       return {
         ...article._source,
@@ -313,29 +314,32 @@ const Home: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto p-4">
-      <Header onCategorySelect={handleCategorySelect} showCategories={true} />
-      <Headlines articles={topArticles} />
-      <div className="globe-and-content">
-        <ThreeGlobe articles={filteredArticles} />
-        <div className="content-below">
-          <SearchBar
-            onResults={handleSearchResults}
-            onFilterChange={handleFilterChange}
-            onSortChange={handleSortChange}
-            availableConcepts={availableConcepts}
-            availableLocations={availableLocations}
-          />
-          {currentArticles.map((article, index) => (
-            <Article key={index} article={article} />
-          ))}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
+    <div>
+      <div className="container mx-auto p-4">
+        <Header onCategorySelect={handleCategorySelect} showCategories={true} />
+        <Headlines articles={topArticles} />
+        <div className="globe-and-content">
+          <ThreeGlobe articles={filteredArticles} />
+          <div className="content-below">
+            <SearchBar
+              onResults={handleSearchResults}
+              onFilterChange={handleFilterChange}
+              onSortChange={handleSortChange}
+              availableConcepts={availableConcepts}
+              availableLocations={availableLocations}
+            />
+            {currentArticles.map((article, index) => (
+              <Article key={index} article={article} />
+            ))}
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

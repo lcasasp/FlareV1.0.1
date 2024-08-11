@@ -219,6 +219,10 @@ button:hover {
   color: white;
 }
 
+.search-bar-container {
+  position: relative;
+  z-index: 20;
+}
 
 /* About page */
 /* ---------------------------------------------------- */
