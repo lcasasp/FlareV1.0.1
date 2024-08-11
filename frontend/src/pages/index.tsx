@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Header from "../components/header";
-import Article from "../components/article";
-import ThreeGlobe from "../components/Globe/globe";
-import SearchBar from "../components/searchBar";
-import Pagination from "../components/pagination";
+import Header from "@/components/header";
+import Article from "@/components/article";
+import ThreeGlobe from "@/components/Globe/globe";
+import SearchBar from "@/components/searchBar";
+import Pagination from "@/components/pagination";
 import Headlines from "@/components/headlines";
 import Footer from "@/components/footer";
+
+const ITEMS_PER_PAGE = 10;
 
 interface Article {
   title: string;
@@ -45,8 +47,6 @@ interface Article {
   totalArticleCount: number;
 }
 
-const ITEMS_PER_PAGE = 10;
-
 const Home: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
@@ -58,6 +58,10 @@ const Home: React.FC = () => {
     concept: string;
     category: string;
   }>({ location: "Any", concept: "Any", category: "All" });
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
 
   const fetchArticles = async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
@@ -279,10 +283,6 @@ const Home: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchArticles();
-  }, []);
-
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentArticles = filteredArticles.slice(
     startIndex,
@@ -316,8 +316,11 @@ const Home: React.FC = () => {
   return (
     <div>
       <div className="container mx-auto p-4">
-        <Header onCategorySelect={handleCategorySelect} showCategories={true} />
-        <Headlines articles={topArticles} />
+        <Header />
+        <Headlines
+          articles={topArticles}
+          onCategorySelect={handleCategorySelect}
+        />
         <div className="globe-and-content">
           <ThreeGlobe articles={filteredArticles} />
           <div className="content-below">

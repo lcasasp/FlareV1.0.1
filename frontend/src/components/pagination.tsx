@@ -73,7 +73,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div
-      className="flex justify-center my-4 space-x-2"
+      className="flex justify-center my-4 space-x-2 mb-0"
       style={{ fontFamily: "Copperplate, fantasy" }}
     >
       <button

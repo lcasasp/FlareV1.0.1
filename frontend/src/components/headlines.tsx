@@ -1,6 +1,24 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
+interface HeadlinesProps {
+  articles: any[];
+  onCategorySelect: (category: string) => void;
+}
+
+const categories = [
+  "All",
+  "Breaking",
+  "Business",
+  "Technology",
+  "Science",
+  "Society",
+];
+
+const Headlines: React.FC<HeadlinesProps> = ({
+  articles,
+  onCategorySelect,
+}) => {
+  const [activeCategory, setActiveCategory] = useState("All");
   const [currentIndex, setCurrentIndex] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -43,6 +61,12 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
     startTimer();
   };
 
+  const handleCategoryClick = (category: string) => {
+    const newCategory = category === activeCategory ? "All" : category;
+    setActiveCategory(newCategory);
+    onCategorySelect(newCategory);
+  };
+
   const displayedArticles = events.slice(currentIndex, currentIndex + 5);
   if (displayedArticles.length < 5) {
     displayedArticles.push(...events.slice(0, 5 - displayedArticles.length));
@@ -74,6 +98,17 @@ const Headlines: React.FC<{ articles: any[] }> = ({ articles }) => {
         <button className="nav-button next-button" onClick={handleNextClick}>
           &#10095;
         </button>
+      </div>
+      <div className="categories flex flex-row flex-wrap justify-center items-center mt-4 md:mt-0 md:flex-grow">
+        {categories.slice(1).map((category) => (
+          <button
+            key={category}
+            onClick={() => handleCategoryClick(category)}
+            className={activeCategory === category ? "active" : ""}
+          >
+            {category}
+          </button>
+        ))}
       </div>
     </div>
   );
