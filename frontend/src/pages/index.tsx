@@ -314,7 +314,7 @@ const Home: React.FC = () => {
 
   return (
     <div className="container mx-auto p-4">
-      <Header onCategorySelect={handleCategorySelect} />
+      <Header onCategorySelect={handleCategorySelect} showCategories={true} />
       <Headlines articles={topArticles} />
       <div className="globe-and-content">
         <ThreeGlobe articles={filteredArticles} />

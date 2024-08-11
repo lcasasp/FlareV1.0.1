@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
 
 interface HeaderProps {
   onCategorySelect: (category: string) => void;
+  showCategories?: boolean;
 }
 
 const categories = [
@@ -13,10 +16,15 @@ const categories = [
   "Society",
 ];
 
-const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
+const Header: React.FC<HeaderProps> = ({ onCategorySelect, showCategories = true }) => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [isFixed, setIsFixed] = useState(true);
   const headerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  const handleDonateClick = () => {
+    router.push('/about#help-us');
+  };
 
   useEffect(() => {
     const updateHeaderStyle = () => {
@@ -64,45 +72,51 @@ const Header: React.FC<HeaderProps> = ({ onCategorySelect }) => {
     >
       <div className="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between">
         <div className="flex items-center justify-between w-full md:w-auto">
-          <div className="flex items-center">
-            <img src="/flare.png" alt="Flare Logo" className="h-10" />
-            <h1 className="title text-xl font-bold ml-2">Flare</h1>
-          </div>
+          <Link href="/">
+            <div className="flex items-center">
+              <img src="/flare.png" alt="Flare Logo" className="h-10" />
+              <h1 className="title text-xl font-bold ml-2">Flare</h1>
+            </div>
+          </Link>
           <nav className="flex items-center md:hidden">
-            <a
-              href="/"
-              className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200"
-            >
+            <Link href="/about">
               About
-            </a>
-            <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200">
+            </Link>
+            <button 
+              onClick={handleDonateClick}
+              className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200">
               Donate
             </button>
           </nav>
         </div>
-        <div className="categories flex flex-row flex-wrap justify-center items-center mt-4 md:mt-0 md:flex-grow">
-          {categories.slice(1).map((category) => (
-            <button
-              key={category}
-              onClick={() => handleCategoryClick(category)}
-              className={`px-4 py-2 mx-2 my-1 md:my-0 rounded transition-colors duration-200 ${
-                activeCategory === category
-                  ? "categories-active text-white bg-blue-500"
-                  : "text-gray-700 hover:bg-gray-300"
-              }`}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
+        {showCategories && (
+          <div className="categories flex flex-row flex-wrap justify-center items-center mt-4 md:mt-0 md:flex-grow">
+            {categories.slice(1).map((category) => (
+              <button
+                key={category}
+                onClick={() => handleCategoryClick(category)}
+                className={`px-4 py-2 mx-2 my-1 md:my-0 rounded transition-colors duration-200 ${
+                  activeCategory === category
+                    ? "categories-active text-white bg-blue-500"
+                    : "text-gray-700 hover:bg-gray-300"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
+        {!showCategories && (
+          <h2 className="text-xl font-bold mb-2 motto">Search for a better Climate</h2>
+        )}
         <nav className="hidden md:flex items-center mt-4 md:mt-0">
-          <a
-            href="/"
-            className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200"
-          >
+          <Link href="/about" className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200">
             About
-          </a>
-          <button className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200">
+          </Link>
+          <button 
+            onClick={handleDonateClick}
+            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200"
+          >
             Donate
           </button>
         </nav>
