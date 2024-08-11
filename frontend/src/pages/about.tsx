@@ -25,7 +25,7 @@ const AboutPage: React.FC = () => {
   return (
     <div className="mb-0">
       <div className="about-container mx-auto p-4">
-        <Header onCategorySelect={() => {}} showCategories={false} />
+        <Header/>
         <div className="about-header">
           <h1>About Flare</h1>
         </div>
@@ -129,7 +129,7 @@ const AboutPage: React.FC = () => {
 
           <div className="vertical-line"></div>
 
-          <div className="help-us-section">
+          <div className="help-us-section" id="help us">
             <h2 className="text-2xl font-semibold mb-6 text-center">Help Us</h2>
             <div className="help-content">
               <p className="mb-4">
