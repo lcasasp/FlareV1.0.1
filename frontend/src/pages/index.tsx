@@ -57,7 +57,8 @@ const Home: React.FC = () => {
     location: string;
     concept: string;
     category: string;
-  }>({ location: "Any", concept: "Any", category: "All" });
+    query: string;
+  }>({ location: "Any", concept: "Any", category: "All", query: "" });
 
   useEffect(() => {
     fetchArticles();
@@ -112,7 +113,7 @@ const Home: React.FC = () => {
     setArticles(formattedData);
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
-    computeTopArticles(formattedData, "All");
+    computeTopArticles(formattedData, filters.category);
   };
 
   const computeTopArticles = (articles: Article[], category: string) => {
@@ -123,9 +124,6 @@ const Home: React.FC = () => {
         article.categories.some((cat) => cat.label.includes(category))
       );
     }
-
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
     const topStories = filteredArticles
       .sort((a, b) => b.compositeScore - a.compositeScore)
@@ -138,63 +136,24 @@ const Home: React.FC = () => {
     computeTopArticles(articles, filters.category);
   }, [filters.category, articles]);
 
-  const handleFilterChange = (newFilters: any) => {
-    const updatedFilters = { ...filters, ...newFilters };
+
+  const handleSearchResults = async (query: string, activeFilters: any) => {
+    // Update the query filter in the state
+    const updatedFilters = { ...activeFilters, query };
     setFilters(updatedFilters);
 
-    let filtered = articles;
-
-    if (updatedFilters.location && updatedFilters.location !== "Any") {
-      filtered = filtered.filter(
-        (article) =>
-          (article.mainLocation &&
-            article.mainLocation.label === updatedFilters.location) ||
-          article.locations.some(
-            (location) => location.label === updatedFilters.location
-          )
-      );
-    }
-
-    if (updatedFilters.concept && updatedFilters.concept !== "Any") {
-      filtered = filtered.filter((article) =>
-        article.concepts.some(
-          (concept) => concept.label.eng === updatedFilters.concept
-        )
-      );
-    }
-
-    if (updatedFilters.category && updatedFilters.category !== "All") {
-      if (updatedFilters.category === "Breaking") {
-        filtered = topArticles;
-      } else {
-        filtered = filtered.filter((article) =>
-          article.categories.some((cat) =>
-            cat.label.includes(updatedFilters.category)
-          )
-        );
-        filtered.sort((a, b) => b.wgt - a.wgt);
-      }
-    }
-
-    setFilteredArticles(filtered);
-    setCurrentPage(1);
-    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  };
-
-  const handleSearchResults = async (query: string) => {
-    if (query === "") {
-      fetchArticles();
+    if (query == "") {
+      handleFilterChange(updatedFilters, articles);
       return;
     }
-    const response = await axios.get(
-      `http://127.0.0.1:5000/search?query=${query}`
-    );
+
+    const response = await axios.get(`http://127.0.0.1:5000/search?query=${query}`);
     const formattedData = response.data.map((article: any) => {
       const score = article._score;
       const title = article._source.title.eng;
       const summary = article._source.summary.eng;
       const image = article._source.images[0];
-
+  
       const mainLocation =
         article._source.location &&
         article._source.location.lat &&
@@ -205,28 +164,25 @@ const Home: React.FC = () => {
               longitude: article._source.location.long,
             }
           : undefined;
-
-      //Only care about locations with score over 60
+  
       const locations = article._source.concepts
         .filter((c: any) => c.type === "loc" && c.score > 60)
         .map((loc: any) => {
-          const latitude =
-            loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude =
-            loc.location && loc.location.long ? loc.location.long : 0;
+          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
           return {
             label: loc.label.eng,
             latitude,
             longitude,
           };
         });
-
+  
       const compositeScore =
         0.2 * article._source.totalArticleCount +
         0.2 * article._source.socialScore +
-        0.2 * article._source.wgt;
-      0.4 * score;
-
+        0.2 * article._source.wgt +
+        0.4 * score;
+  
       return {
         ...article._source,
         title,
@@ -237,11 +193,53 @@ const Home: React.FC = () => {
         compositeScore,
       };
     });
-    setArticles(formattedData);
-    setFilteredArticles(formattedData);
-    setCurrentPage(1);
-    setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
+  
+    handleFilterChange(updatedFilters, formattedData);
   };
+  
+
+  const handleFilterChange = (newFilters: any, data: Article[] = articles) => {
+    const updatedFilters = { ...filters, ...newFilters };
+    setFilters(updatedFilters);
+  
+    let filtered = data;
+  
+    // Apply category filter
+    if (updatedFilters.category && updatedFilters.category !== "All") {
+      filtered = filtered.filter((article) =>
+        article.categories.some((cat) => cat.label.includes(updatedFilters.category))
+      );
+    }
+  
+    // Apply location filter
+    if (updatedFilters.location && updatedFilters.location !== "Any") {
+      filtered = filtered.filter(
+        (article) =>
+          (article.mainLocation && article.mainLocation.label === updatedFilters.location) ||
+          article.locations.some((location) => location.label === updatedFilters.location)
+      );
+    }
+  
+    // Apply concept filter
+    if (updatedFilters.concept && updatedFilters.concept !== "Any") {
+      filtered = filtered.filter((article) =>
+        article.concepts.some((concept) => concept.label.eng === updatedFilters.concept)
+      );
+    }
+  
+    // Apply search query filter
+    if (updatedFilters.query && updatedFilters.query.trim() !== "") {
+      filtered = filtered.filter((article) =>
+        article.title.toLowerCase().includes(updatedFilters.query.toLowerCase())
+      );
+    }
+  
+    // Update filtered articles and reset pagination
+    setFilteredArticles(filtered);
+    setCurrentPage(1);
+    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  };
+  
 
   const handleSortChange = (sortCriteria: string) => {
     let sortedArticles = [...filteredArticles];
@@ -276,11 +274,9 @@ const Home: React.FC = () => {
   };
 
   const handleCategorySelect = (category: string) => {
-    if (filters.category === category) {
-      handleFilterChange({ category: "All" });
-    } else {
-      handleFilterChange({ category });
-    }
+    const updatedFilters = { ...filters, category };
+    setFilters(updatedFilters);
+    handleFilterChange(updatedFilters);
   };
 
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -296,7 +292,7 @@ const Home: React.FC = () => {
   const availableConcepts = Array.from(
     new Set([
       "Any",
-      ...articles.flatMap((article) =>
+      ...filteredArticles.flatMap((article) =>
         article.concepts.map((concept) => concept.label.eng)
       ),
     ])
@@ -304,10 +300,10 @@ const Home: React.FC = () => {
   const availableLocations = Array.from(
     new Set([
       "Any",
-      ...articles.flatMap((article) =>
+      ...filteredArticles.flatMap((article) =>
         article.locations.map((location) => location.label)
       ),
-      ...articles.flatMap((article) =>
+      ...filteredArticles.flatMap((article) =>
         article.mainLocation ? [article.mainLocation.label] : []
       ),
     ])
