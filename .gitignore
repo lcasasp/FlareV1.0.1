@@ -6,6 +6,10 @@ __pycache__/
 *.pyz
 *.pyzw
 
+# Docker
+.dockerignore
+compose.yaml
+
 # Environments
 .env
 .venv/
