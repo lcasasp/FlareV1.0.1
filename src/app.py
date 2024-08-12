@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch
 from services import fetch_events, extract_and_prepare_event_data, event_mapping
@@ -8,31 +9,40 @@ import logging
 
 app = Flask(__name__)
 CORS(app)
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s: %(message)s')
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s: %(message)s')
 
 try:
+    elasticsearch_url = os.getenv('ELASTICSEARCH_URL', 'http://localhost:9200')
+    elasticsearch_username = os.getenv('ELASTICSEARCH_USERNAME', 'elastic')
+    elasticsearch_password = os.getenv('ELASTIC_PW', Config.ELASTIC_PW)
+
     es = Elasticsearch(
-        ["http://localhost:9200"],
-        basic_auth=('elastic', Config.ELASTIC_PW),
+        [elasticsearch_url],
+        basic_auth=(elasticsearch_username, elasticsearch_password),
         verify_certs=False,
     )
-except ElasticsearchException as e:
+except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     raise
+
 
 @app.errorhandler(404)
 def not_found_error(error):
     return jsonify({"error": "Resource not found"}), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):
     logging.error(f"Server Error: {error}")
     return jsonify({"error": "Internal server error"}), 500
 
+
 @app.errorhandler(Exception)
 def unhandled_exception(error):
     logging.error(f"Unhandled Exception: {error}")
     return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 @app.route('/articles', methods=['GET'])
 def get_articles():
@@ -52,9 +62,10 @@ def get_articles():
         })
         articles = [hit["_source"] for hit in result['hits']['hits']]
         return jsonify(articles)
-    except ElasticsearchException as e:
+    except Exception as e:
         logging.error(f"Error fetching articles: {e}")
         return jsonify({"error": "Failed to fetch articles from Elasticsearch"}), 500
+
 
 @app.route('/search', methods=['GET'])
 def search_events():
@@ -118,9 +129,10 @@ def search_events():
 
         search_result = es.search(index="events", body=search_body)
         return jsonify([hit["_source"] for hit in search_result['hits']['hits']])
-    except ElasticsearchException as e:
+    except Exception as e:
         logging.error(f"Error searching for events: {e}")
         return jsonify({"error": "Failed to search events in Elasticsearch"}), 500
+
 
 @app.route('/fetch', methods=['GET'])
 def fetch_and_index_events():
@@ -134,19 +146,21 @@ def fetch_and_index_events():
         if not es.indices.exists(index="events"):
             es.indices.create(index="events", ignore=400)
 
-        events = fetch_events(categories=categories, concepts=concepts, start_page=start_page, end_page=end_page)
+        events = fetch_events(categories=categories, concepts=concepts,
+                              start_page=start_page, end_page=end_page)
         processed_events = extract_and_prepare_event_data(events, es)
 
         for event in processed_events:
             es.index(index="events", body=event)
 
         return jsonify(processed_events)
-    except ElasticsearchException as e:
+    except Exception as e:
         logging.error(f"Error indexing events: {e}")
         return jsonify({"error": "Failed to index events"}), 500
     except Exception as e:
         logging.error(f"Unhandled error during fetch and index: {e}")
         return jsonify({"error": "An unexpected error occurred during fetch and index"}), 500
+
 
 @app.route('/es-index')
 def create_es_index():
@@ -156,9 +170,10 @@ def create_es_index():
             return jsonify({"message": "Index 'events' created"})
         else:
             return jsonify({"message": "Index already exists"})
-    except ElasticsearchException as e:
+    except Exception as e:
         logging.error(f"Error creating Elasticsearch index: {e}")
         return jsonify({"error": "Failed to create Elasticsearch index"}), 500
+
 
 @app.route('/delete_index', methods=['DELETE'])
 def delete_index():
@@ -169,9 +184,10 @@ def delete_index():
             return jsonify({"message": f"Index '{index_name}' deleted"}), 200
         else:
             return jsonify({"message": "Index not found"}), 404
-    except ElasticsearchException as e:
+    except Exception as e:
         logging.error(f"Error deleting index: {e}")
         return jsonify({"error": "Failed to delete Elasticsearch index"}), 500
 
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run('0.0.0.0', port=5000, debug=True)

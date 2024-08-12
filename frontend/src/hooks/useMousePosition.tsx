@@ -25,13 +25,14 @@ const useMousePosition = (ref: React.RefObject<HTMLElement>) => {
       }
     };
 
-    if (ref.current) {
-      ref.current.addEventListener("mousemove", handleMouseMove);
+    const element = ref.current;
+    if (element) {
+      element.addEventListener("mousemove", handleMouseMove);
     }
 
     return () => {
-      if (ref.current) {
-        ref.current.removeEventListener("mousemove", handleMouseMove);
+      if (element) {
+        element.removeEventListener("mousemove", handleMouseMove);
       }
     };
   }, [ref]);

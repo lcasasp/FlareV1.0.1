@@ -21,9 +21,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const rotationSpeedRef = useRef(0.0004);
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
-  const [hoveredMarker, setHoveredMarker] = useState<THREE.Object3D | null>(
-    null
-  );
   const [hoveredInfo, setHoveredInfo] = useState<{
     title: string;
     image: string;
@@ -37,12 +34,12 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     // Clean up previous markers
     markerRefs.current.forEach((marker) => marker.parent?.remove(marker));
     markerRefs.current = [];
-    setHoveredMarker(null);
     setHoveredInfo(null);
+    const currentMount = mountRef.current;
 
     // Set up scene
-    const w = mountRef.current?.clientWidth || window.innerWidth;
-    const h = mountRef.current?.clientHeight || window.innerHeight;
+    const w = currentMount?.clientWidth || window.innerWidth;
+    const h = currentMount?.clientHeight || window.innerHeight;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
 
@@ -74,8 +71,8 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     renderer.setSize(w, h);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    if (mountRef.current) {
-      mountRef.current.appendChild(renderer.domElement);
+    if (currentMount) {
+      currentMount.appendChild(renderer.domElement);
     }
 
     // Set up controls
@@ -127,16 +124,12 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
       if (visibleIntersects.length > 0) {
         const intersectedMarker = visibleIntersects[0].object;
-        if (intersectedMarker !== hoveredMarker) {
-          setHoveredMarker(intersectedMarker);
-          setHoveredInfo({
-            title: intersectedMarker.userData.title,
-            image: intersectedMarker.userData.image,
-            url: intersectedMarker.userData.url,
-          });
-        }
+        setHoveredInfo({
+          title: intersectedMarker.userData.title,
+          image: intersectedMarker.userData.image,
+          url: intersectedMarker.userData.url,
+        });
       } else {
-        setHoveredMarker(null);
         setHoveredInfo(null);
       }
 
@@ -193,7 +186,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           camera,
           markerRefs,
           mouse,
-          setHoveredMarker,
           setHoveredInfo
         ),
       false
@@ -215,14 +207,12 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           camera,
           markerRefs,
           mouse,
-          setHoveredMarker,
           setHoveredInfo
         )
       );
-      mountRef.current?.removeChild(renderer.domElement);
+      currentMount?.removeChild(renderer.domElement);
     };
-  }, [articles]);
-
+  }, [articles]); // eslint-disable-next-line react-hooks/exhaustive-deps
 
   return (
     <div className="three-globe-container">

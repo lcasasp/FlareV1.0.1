@@ -1,15 +1,18 @@
+import os
 import requests
 from elasticsearch import Elasticsearch
 from config import Config
 from eventregistry import *
 from datetime import datetime, timedelta
 
-er = EventRegistry(apiKey=Config.NEWS_API_KEY, allowUseOfArchive=False)
+er = EventRegistry(apiKey=os.getenv(
+    'APIKEY', Config.NEWS_API_KEY), allowUseOfArchive=False)
+
 
 def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     """
     Fetches events from EventRegistry API based on given categories and concepts.
-    
+
     Args:
         categories (str): The category URI to filter events.
         concepts (list): List of concept URIs to filter events.
@@ -53,8 +56,10 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
                 sortBy="rel",
                 page=curPage,
                 returnInfo=ReturnInfo(
-                    eventInfo=EventInfoFlags(concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
-                    locationInfo=LocationInfoFlags(label=True, geoLocation=True)
+                    eventInfo=EventInfoFlags(
+                        concepts=True, image=True, location=True, imageCount=1, infoArticle=True, socialScore=True),
+                    locationInfo=LocationInfoFlags(
+                        label=True, geoLocation=True)
                 )
             )
         )
@@ -69,7 +74,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
 def extract_and_prepare_event_data(event_response, es):
     """
     Filters and prepares event data for indexing into Elasticsearch.
-    
+
     Args:
         event_response (list): A list of event data to process.
 
@@ -80,7 +85,8 @@ def extract_and_prepare_event_data(event_response, es):
     for event in event_response:
         # Filter out concepts with a score below 50
         if 'concepts' in event:
-            filtered_concepts = [concept for concept in event['concepts'] if concept.get('score', 0) > 50]
+            filtered_concepts = [
+                concept for concept in event['concepts'] if concept.get('score', 0) > 50]
             event['concepts'] = filtered_concepts
 
         article_url = event['infoArticle']['eng']['url']

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import Image from "next/image";
 
 const Header: React.FC = () => {
   const [showMotto, setShowMotto] = useState(true);
@@ -47,7 +48,7 @@ const Header: React.FC = () => {
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link href="/">
             <div className="flex items-center">
-              <img src="/flare.png" alt="Flare Logo" className="h-10" />
+              <Image src="/flare.png" alt="Flare Logo" width={40} height={40} />
               <h1 className="title text-xl font-bold ml-2">Flare</h1>
             </div>
           </Link>
