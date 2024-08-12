@@ -18,9 +18,12 @@
     "three": "^0.167.1"
   },
   "devDependencies": {
+    "@types/draco3d": "^1.4.10",
     "@types/node": "^20",
+    "@types/offscreencanvas": "^2019.7.3",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-reconciler": "^0.28.8",
     "@types/three": "^0.167.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
