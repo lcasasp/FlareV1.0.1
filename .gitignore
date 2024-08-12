@@ -6,9 +6,6 @@ __pycache__/
 *.pyz
 *.pyzw
 
-# Docker
-compose.yaml
-
 # Environments
 .env
 .venv/
@@ -23,3 +20,5 @@ venv/
 
 #Node
 node_modules/
+
+compose.yaml
