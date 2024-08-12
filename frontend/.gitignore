@@ -36,6 +36,5 @@ yarn-error.log*
 next-env.d.ts
 
 #Docker
-.dockerignore
 compose.yaml
 
