@@ -99,7 +99,7 @@ const Headlines: React.FC<HeadlinesProps> = ({
           &#10095;
         </button>
       </div>
-      <div className="categories flex flex-row flex-wrap justify-center items-center mt-4 md:mt-0 md:flex-grow">
+      <div className="categories">
         {categories.slice(1).map((category) => (
           <button
             key={category}

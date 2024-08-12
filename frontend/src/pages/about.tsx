@@ -129,7 +129,7 @@ const AboutPage: React.FC = () => {
 
           <div className="vertical-line"></div>
 
-          <div className="help-us-section" id="help us">
+          <div className="help-us-section" id="help-us">
             <h2 className="text-2xl font-semibold mb-6 text-center">Help Us</h2>
             <div className="help-content">
               <p className="mb-4">
