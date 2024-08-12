@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 
 interface HeadlinesProps {
   articles: any[];
@@ -26,40 +26,42 @@ const Headlines: React.FC<HeadlinesProps> = ({
   const totalItems = 10;
   const displayCount = 5;
 
-  useEffect(() => {
-    startTimer();
-    return () => {
-      stopTimer();
-    };
-  }, []);
+  const advanceCarousel = useCallback(() => {
+    setCurrentIndex((prevIndex) =>
+      prevIndex >= totalItems - displayCount ? 0 : prevIndex + 1
+    );
+  }, [totalItems, displayCount]);
 
-  const startTimer = () => {
-    stopTimer();
-    timerRef.current = setInterval(handleNextClick, 5000);
-  };
+  const startTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(advanceCarousel, 5000);
+  }, [advanceCarousel]);
 
-  const stopTimer = () => {
+  const stopTimer = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-  };
+  }, []);
 
-  const handlePrevClick = () => {
+  const handleNextClick = useCallback(() => {
+    stopTimer();
+    advanceCarousel();
+    startTimer();
+  }, [advanceCarousel, startTimer, stopTimer]);
+
+  const handlePrevClick = useCallback(() => {
     stopTimer();
     setCurrentIndex((prevIndex) =>
       prevIndex === 0 ? totalItems - displayCount : prevIndex - 1
     );
     startTimer();
-  };
+  }, [stopTimer, startTimer, totalItems, displayCount]);
 
-  const handleNextClick = () => {
-    stopTimer();
-    setCurrentIndex((prevIndex) =>
-      prevIndex >= totalItems - displayCount ? 0 : prevIndex + 1
-    );
+  useEffect(() => {
     startTimer();
-  };
+    return () => stopTimer();
+  }, [startTimer, stopTimer]);
 
   const handleCategoryClick = (category: string) => {
     const newCategory = category === activeCategory ? "All" : category;

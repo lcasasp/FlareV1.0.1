@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Header from "@/components/header";
 import Article from "@/components/article";
@@ -60,11 +60,9 @@ const Home: React.FC = () => {
     query: string;
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
 
-  useEffect(() => {
-    fetchArticles();
-  }, []);
+  const { category } = filters;
 
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     const response = await axios.get("http://127.0.0.1:5000/articles");
     const formattedData = response.data.map((article: any) => {
       const title = article.title.eng;
@@ -114,7 +112,11 @@ const Home: React.FC = () => {
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
     computeTopArticles(formattedData, filters.category);
-  };
+  }, [filters.category]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [fetchArticles]);
 
   const computeTopArticles = (articles: Article[], category: string) => {
     let filteredArticles = articles;
@@ -133,8 +135,8 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-    computeTopArticles(articles, filters.category);
-  }, [filters.category, articles]);
+    computeTopArticles(articles, category);
+  }, [category, articles]);
 
 
   const handleSearchResults = async (query: string, activeFilters: any) => {

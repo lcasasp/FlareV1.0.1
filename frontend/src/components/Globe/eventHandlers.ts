@@ -35,7 +35,6 @@ export const handleMouseUp = (
   camera: THREE.PerspectiveCamera,
   markerRefs: React.MutableRefObject<THREE.Mesh[]>,
   mouse: React.MutableRefObject<THREE.Vector2>,
-  setHoveredMarker: React.Dispatch<React.SetStateAction<THREE.Object3D | null>>,
   setHoveredInfo: React.Dispatch<
     React.SetStateAction<{ title: string; image: string; url: string } | null>
   >
