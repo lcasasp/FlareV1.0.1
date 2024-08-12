@@ -12,10 +12,11 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
 
 try:
-    elasticsearch_url = os.getenv('ELASTICSEARCH_URL', 'http://localhost:9200')
+    # elasticsearch_url = os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
+    elasticsearch_url = 'http://localhost:9200'
     elasticsearch_username = os.getenv('ELASTICSEARCH_USERNAME', 'elastic')
     elasticsearch_password = os.getenv('ELASTIC_PW')
-
+    print(elasticsearch_url, elasticsearch_username, elasticsearch_password)
     es = Elasticsearch(
         [elasticsearch_url],
         basic_auth=(elasticsearch_username, elasticsearch_password),
@@ -123,11 +124,11 @@ def search_events():
                     "boost_mode": "sum"
                 }
             },
-            "size": 100
+            "size": 50
         }
 
         search_result = es.search(index="events", body=search_body)
-        return jsonify([hit["_source"] for hit in search_result['hits']['hits']])
+        return search_result['hits']['hits']
     except Exception as e:
         logging.error(f"Error searching for events: {e}")
         return jsonify({"error": "Failed to search events in Elasticsearch"}), 500

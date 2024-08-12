@@ -4,7 +4,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - ELASTIC_PASSWORD=${ELASTIC_PW}
+      - ELASTIC_PASSWORD= os.getenv('ELASTIC_PW')
     ports:
       - "9200:9200"
     healthcheck:
@@ -17,11 +17,6 @@ services:
     build:
       context: ./api/
       dockerfile: Dockerfile
-    environment:
-      - ELASTICSEARCH_URL=http://elasticsearch:9200
-      - ELASTICSEARCH_USERNAME=elastic
-      - ELASTIC_PW=${ELASTIC_PW}
-      - APIKEY=${APIKEY}
     depends_on:
       elasticsearch:
         condition: service_healthy

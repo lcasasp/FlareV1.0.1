@@ -116,7 +116,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     fetchArticles();
-  }, [fetchArticles]);
+  }, []);
 
   const computeTopArticles = (articles: Article[], category: string) => {
     let filteredArticles = articles;
@@ -127,7 +127,11 @@ const Home: React.FC = () => {
       );
     }
 
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
     const topStories = filteredArticles
+      .filter((article) => new Date(article.eventDate) > sevenDaysAgo)
       .sort((a, b) => b.compositeScore - a.compositeScore)
       .slice(0, 25); // Top 25 stories
 
@@ -140,7 +144,6 @@ const Home: React.FC = () => {
 
 
   const handleSearchResults = async (query: string, activeFilters: any) => {
-    // Update the query filter in the state
     const updatedFilters = { ...activeFilters, query };
     setFilters(updatedFilters);
 
@@ -181,9 +184,8 @@ const Home: React.FC = () => {
   
       const compositeScore =
         0.2 * article._source.totalArticleCount +
-        0.2 * article._source.socialScore +
         0.2 * article._source.wgt +
-        0.4 * score;
+        0.6 * score;
   
       return {
         ...article._source,
@@ -277,7 +279,6 @@ const Home: React.FC = () => {
 
   const handleCategorySelect = (category: string) => {
     const updatedFilters = { ...filters, category };
-    setFilters(updatedFilters);
     handleFilterChange(updatedFilters);
   };
 
