@@ -179,8 +179,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
             </ul>
           )}
         </div>
-        <div>
-          <label htmlFor="sortBy" className="block">
+        <div className="sort-container">
+          <label htmlFor="sortBy" className="block sortBy">
             Sort by:
           </label>
           <select

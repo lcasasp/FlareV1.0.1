@@ -247,7 +247,10 @@ button:hover {
 
 .search-bar-container {
   position: relative;
-  z-index: 20;
+}
+
+.sort-container {
+  position: relative;
 }
 
 /* About page */
