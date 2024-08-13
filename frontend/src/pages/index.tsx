@@ -61,7 +61,7 @@ const Home: React.FC = () => {
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
 
   const { category } = filters;
-  const backend_url = process.env.FLAS_API_URL
+  const backend_url = process.env.FLASK_API_URL
 
   const fetchArticles = useCallback(async () => {
     const response = await axios.get(`${backend_url}/articles`);
