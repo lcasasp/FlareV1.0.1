@@ -14,7 +14,8 @@ logging.basicConfig(level=logging.DEBUG,
 
 try:
     es = Elasticsearch(
-        os.getenv('FOUNDELASTICSEARCH_URL')
+        os.getenv('FOUNDELASTICSEARCH_URL'),
+        http_auth=('elastic', os.getenv('HEROKU_ES_PASSWORD')),
     )
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
