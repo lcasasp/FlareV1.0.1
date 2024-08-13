@@ -10,7 +10,7 @@
 /coverage
 
 # next.js
-/.next/
+frontend/.next/
 /out/
 
 # production
@@ -33,3 +33,34 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pyz
+*.pyzw
+
+# Environments
+.env
+.venv/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+#Node
+node_modules/
+
+compose.yaml
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
+.env
