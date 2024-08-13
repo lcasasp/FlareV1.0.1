@@ -64,7 +64,7 @@ const Home: React.FC = () => {
 
   const fetchArticles = useCallback(async () => {
     const response = await axios.get(
-      "https://flare-api-6431634f8010.herokuapp.com//articles"
+      "https://flare-api-6431634f8010.herokuapp.com/articles"
     );
     const formattedData = response.data.map((article: any) => {
       const title = article.title.eng;
