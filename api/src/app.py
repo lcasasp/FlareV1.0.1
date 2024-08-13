@@ -8,6 +8,7 @@ from datetime import datetime
 import logging
 
 app = Flask(__name__)
+CORS(app)
 app.config['CACHE_TYPE'] = 'SimpleCache'
 
 logging.basicConfig(level=logging.DEBUG,
