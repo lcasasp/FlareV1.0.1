@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, jsonify
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 from .config import Config
 from .services import fetch_events, extract_and_prepare_event_data, event_mapping
 from flask_cors import CORS
@@ -148,15 +148,25 @@ def fetch_and_index_events():
                               start_page=start_page, end_page=end_page)
         processed_events = extract_and_prepare_event_data(events)
 
-        urls_seen = set()
-        unique_events = [event for event in processed_events if not (
-            event['infoArticle']['eng']['url'] in urls_seen or urls_seen.add(event['infoArticle']['eng']['url']))]
+        bulk_actions = []
+        uris_seen = set()
 
-        for event in unique_events:
-            logging.debug(f"Indexing event: {event['uri']}")
-            es.index(index="events", body=event)
+        for event in processed_events:
+            uri = event["uri"]
+            if uri not in urls_seen:
+                urls_seen.add(uri)
+                action = {
+                    "_index": "events",
+                    "_id": event['uri'],
+                    "_source": event
+                }
+                bulk_actions.append(action)
+        
+        # Perform bulk indexing
+        if bulk_actions:
+            helpers.bulk(es, bulk_actions)
 
-        return jsonify(unique_events)
+        return jsonify([action['_source'] for action in bulk_actions])
     except Exception as e:
         logging.error(f"Error indexing events: {e}")
         return jsonify({"error": "Failed to index events"}), 500
