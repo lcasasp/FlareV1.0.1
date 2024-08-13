@@ -1,5 +1,6 @@
 import React, { useRef } from "react";
 import useMousePosition from "../hooks/useMousePosition";
+import { get } from "http";
 
 interface ArticleProps {
   article: {
@@ -39,9 +40,36 @@ interface ArticleProps {
   };
 }
 
+const getSentimentColor = (sentiment: number) => {
+  const normalized = (sentiment + 1) / 2;
+  const red = Math.floor((1 - normalized) * 255);
+  const green = Math.floor(normalized * 255);
+  return `rgb(${red}, ${green}, 0)`;
+};
+
+const getSentimentLabel = (sentiment: number) => {
+  if (sentiment <= -0.5) {
+    return "Very Negative";
+  } else if (sentiment <= -0.25) {
+    return "Negative";
+  } else if (sentiment <= -0.15) {
+    return "Slightly Negative";
+  } else if (sentiment < 0.15) {
+    return "Neutral";
+  } else if (sentiment < 0.25) {
+    return "Slightly Positive";
+  } else if (sentiment < 0.5) {
+    return "Positive";
+  } else {
+    return "Very Positive";
+  }
+};
+
 const Article: React.FC<ArticleProps> = ({ article }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { x, y, rotateX, rotateY } = useMousePosition(cardRef);
+  const sentimentLabel = getSentimentLabel(article.sentiment);
+  const sentimentColor = getSentimentColor(article.sentiment);
 
   return (
     <div
@@ -60,8 +88,13 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
         {article.title}
       </h3>
       <p className="text-gray-600 text-sm mb-2">{article.eventDate}</p>
-      <h3 className="text-sm font-semibold mb-2" style={{ color: "#064273" }}>
-        Sentiment: {article.sentiment.toFixed(2)}
+      <h3 className="text-sm mb-2">
+        <span style={{ fontWeight: "bold", color: "#064273" }}>
+          Sentiment:
+        </span>{" "}
+        <span style={{ fontWeight: "bold", color: sentimentColor }}>
+          {sentimentLabel} ({article.sentiment.toFixed(2)})
+        </span>
       </h3>
       {article.image && (
         <img

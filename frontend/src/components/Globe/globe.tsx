@@ -89,17 +89,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       controls.maxDistance = 3;
     }
     controls.minDistance = 2;
-
-    // Disable scroll to zoom
-    controls.mouseButtons = {
-      LEFT: THREE.MOUSE.ROTATE,
-      MIDDLE: null,
-      RIGHT: THREE.MOUSE.ROTATE,
-    };
-    controls.touches = {
-      ONE: THREE.TOUCH.ROTATE,
-      TWO: THREE.TOUCH.DOLLY_ROTATE,
-    };
     controls.update();
 
 
@@ -197,7 +186,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       controls.update();
     };
 
-    window.addEventListener("wheel", handleScroll, false);
+    renderer.domElement.addEventListener("wheel", handleScroll, false);
     window.addEventListener("resize", handleWindowResize, false);
 
     renderer.domElement.addEventListener(
@@ -228,6 +217,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     // Clean up
     return () => {
+      renderer.domElement.removeEventListener("wheel", (event) =>
+        handleScroll()
+      );
       renderer.domElement.removeEventListener("mousedown", (event) =>
         handleMouseDown(event, isDragging)
       );
