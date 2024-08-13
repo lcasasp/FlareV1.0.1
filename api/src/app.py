@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, jsonify
 from elasticsearch_serverless import Elasticsearch
-from config import Config
-from services import fetch_events, extract_and_prepare_event_data, event_mapping
+from .config import Config
+from .services import fetch_events, extract_and_prepare_event_data, event_mapping
 from flask_cors import CORS
 from datetime import datetime
 import logging
