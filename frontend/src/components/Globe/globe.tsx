@@ -80,7 +80,14 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     controls.target.set(0, 0, 0);
     controls.enableZoom = false;
     controls.enablePan = false;
-    controls.maxDistance = 5;
+    const width = window.innerWidth;
+    if (width < 450) {
+      controls.maxDistance = 4;
+    } else if (width < 600) {
+      controls.maxDistance = 3.5;
+    } else {
+      controls.maxDistance = 3;
+    }
     controls.minDistance = 2;
 
     // Disable scroll to zoom
@@ -149,20 +156,19 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         setHoveredInfo(null);
       }
 
-      //Stops spinning globe if hovering over globe or markers
       if (mouse.current.x && mouse.current.y) {
         const barrierIntersects = raycaster.current.intersectObjects([
           earthGroup,
           ...markerRefs.current,
         ]);
         if (barrierIntersects.length > 0) {
-          isMouseOverGlobe.current = true;
           rotationSpeedRef.current = 0;
+          isMouseOverGlobe.current = true;
         } else {
-          isMouseOverGlobe.current = false;
           rotationSpeedRef.current = 0.0004;
+          isMouseOverGlobe.current = false;
         }
-      }
+      } 
 
       renderer.render(scene, camera);
     };
@@ -222,7 +228,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     // Clean up
     return () => {
-      window.removeEventListener("wheel", handleScroll);
       renderer.domElement.removeEventListener("mousedown", (event) =>
         handleMouseDown(event, isDragging)
       );
