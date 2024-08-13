@@ -1,6 +1,6 @@
 Flask==3.0.3
 Flask-RESTful==0.3.10
-elasticsearch_serverless
+elasticsearch==8.14.0
 requests==2.32.0
 python-dotenv==1.0.1
 flask-cors==4.0.1

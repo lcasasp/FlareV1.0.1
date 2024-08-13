@@ -1,6 +1,6 @@
 import os
 from flask import Flask, request, jsonify
-from elasticsearch_serverless import Elasticsearch
+from elasticsearch import Elasticsearch
 from .config import Config
 from .services import fetch_events, extract_and_prepare_event_data, event_mapping
 from flask_cors import CORS
@@ -13,6 +13,7 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
 
 try:
+    elasticsearch_password = os.getenv('ELASTIC_PW')
     es = Elasticsearch(
         os.getenv('FOUNDELASTICSEARCH_URL'),
         http_auth=('elastic', os.getenv('HEROKU_ES_PASSWORD')),
@@ -20,7 +21,6 @@ try:
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     raise
-
 
 @app.errorhandler(404)
 def not_found_error(error):
