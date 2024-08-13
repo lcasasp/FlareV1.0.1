@@ -154,7 +154,7 @@ def fetch_and_index_events():
         for event in processed_events:
             uri = event["uri"]
             if uri not in urls_seen:
-                urls_seen.add(uri)
+                uris_seen.add(uri)
                 action = {
                     "_index": "events",
                     "_id": event['uri'],
