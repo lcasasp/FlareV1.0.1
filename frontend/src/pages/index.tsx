@@ -61,10 +61,11 @@ const Home: React.FC = () => {
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
 
   const { category } = filters;
-  const backend_url = process.env.FLASK_API_URL
 
   const fetchArticles = useCallback(async () => {
-    const response = await axios.get(`${backend_url}/articles`);
+    const response = await axios.get(
+      "https://flare-api-6431634f8010.herokuapp.com//articles"
+    );
     const formattedData = response.data.map((article: any) => {
       const title = article.title.eng;
       const summary = article.summary.eng;
@@ -143,7 +144,6 @@ const Home: React.FC = () => {
     computeTopArticles(articles, category);
   }, [category, articles]);
 
-
   const handleSearchResults = async (query: string, activeFilters: any) => {
     const updatedFilters = { ...activeFilters, query };
     setFilters(updatedFilters);
@@ -153,13 +153,15 @@ const Home: React.FC = () => {
       return;
     }
 
-    const response = await axios.get(`${backend_url}/search?query=${query}`);
+    const response = await axios.get(
+      `https://flare-api-6431634f8010.herokuapp.com//search?query=${query}`
+    );
     const formattedData = response.data.map((article: any) => {
       const score = article._score;
       const title = article._source.title.eng;
       const summary = article._source.summary.eng;
       const image = article._source.images[0];
-  
+
       const mainLocation =
         article._source.location &&
         article._source.location.lat &&
@@ -170,24 +172,26 @@ const Home: React.FC = () => {
               longitude: article._source.location.long,
             }
           : undefined;
-  
+
       const locations = article._source.concepts
         .filter((c: any) => c.type === "loc" && c.score > 60)
         .map((loc: any) => {
-          const latitude = loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude = loc.location && loc.location.long ? loc.location.long : 0;
+          const latitude =
+            loc.location && loc.location.lat ? loc.location.lat : 0;
+          const longitude =
+            loc.location && loc.location.long ? loc.location.long : 0;
           return {
             label: loc.label.eng,
             latitude,
             longitude,
           };
         });
-  
+
       const compositeScore =
         0.2 * article._source.totalArticleCount +
         0.2 * article._source.wgt +
         0.6 * score;
-  
+
       return {
         ...article._source,
         title,
@@ -198,53 +202,58 @@ const Home: React.FC = () => {
         compositeScore,
       };
     });
-  
+
     handleFilterChange(updatedFilters, formattedData);
   };
-  
 
   const handleFilterChange = (newFilters: any, data: Article[] = articles) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
-  
+
     let filtered = data;
-  
+
     // Apply category filter
     if (updatedFilters.category && updatedFilters.category !== "All") {
       filtered = filtered.filter((article) =>
-        article.categories.some((cat) => cat.label.includes(updatedFilters.category))
+        article.categories.some((cat) =>
+          cat.label.includes(updatedFilters.category)
+        )
       );
     }
-  
+
     // Apply location filter
     if (updatedFilters.location && updatedFilters.location !== "Any") {
       filtered = filtered.filter(
         (article) =>
-          (article.mainLocation && article.mainLocation.label === updatedFilters.location) ||
-          article.locations.some((location) => location.label === updatedFilters.location)
+          (article.mainLocation &&
+            article.mainLocation.label === updatedFilters.location) ||
+          article.locations.some(
+            (location) => location.label === updatedFilters.location
+          )
       );
     }
-  
+
     // Apply concept filter
     if (updatedFilters.concept && updatedFilters.concept !== "Any") {
       filtered = filtered.filter((article) =>
-        article.concepts.some((concept) => concept.label.eng === updatedFilters.concept)
+        article.concepts.some(
+          (concept) => concept.label.eng === updatedFilters.concept
+        )
       );
     }
-  
+
     // Apply search query filter
     if (updatedFilters.query && updatedFilters.query.trim() !== "") {
       filtered = filtered.filter((article) =>
         article.title.toLowerCase().includes(updatedFilters.query.toLowerCase())
       );
     }
-  
+
     // Update filtered articles and reset pagination
     setFilteredArticles(filtered);
     setCurrentPage(1);
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
   };
-  
 
   const handleSortChange = (sortCriteria: string) => {
     let sortedArticles = [...filteredArticles];
