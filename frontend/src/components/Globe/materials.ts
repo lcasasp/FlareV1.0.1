@@ -36,7 +36,7 @@ export const createEarthGroup = (
   const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const material = new THREE.MeshPhongMaterial({
-    map: loader.load("/textures/10k_earth_normal_map.jpg"),
+    map: loader.load("/textures/8k_globemap.jpeg"),
     bumpMap: loader.load("/textures/4k_earthbump.jpg"),
     bumpScale: 5,
   });
@@ -118,7 +118,7 @@ export const createLights = () => {
   const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const lightsMat = new THREE.MeshBasicMaterial({
-    map: loader.load("/textures/10k_earth_nighttime.jpg"),
+    map: loader.load("/textures/4k_nightmap.jpg"),
     blending: THREE.AdditiveBlending,
   });
   return new THREE.Mesh(geometry, lightsMat);
