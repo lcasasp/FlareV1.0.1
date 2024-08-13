@@ -9,8 +9,7 @@ import logging
 
 app = Flask(__name__)
 app.config['CACHE_TYPE'] = 'SimpleCache'
-cache = Cache(app)
-CORS(app)
+
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
 

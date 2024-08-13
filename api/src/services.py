@@ -79,7 +79,6 @@ def extract_and_prepare_event_data(event_response):
     Returns:
         list: A list of unique and processed events ready for indexing.
     """
-    logging.debug(f"Processing {len(event_response)} events")
     processed_events = []
     for event in event_response:
         if 'concepts' in event:
