@@ -6,9 +6,12 @@ load_dotenv()
 
 class Config:
     NEWS_API_KEY = os.getenv('NEWS_API_KEY')
-    CLOUD_ID = os.getenv('ELASTIC_CLOUDID')
+    ELASTIC_CLOUD_ID = os.getenv('ELASTIC_CLOUDID')
     ES_KEY = os.getenv('ELASTIC_KEY')
-    ES_ENDPOINT = os.getenv('ELASTIC_ENDPOINT')
+    ELASTIC_ENDPOINT = os.getenv('ELASTIC_ENDPOINT')
+
+    HEROKU_ES_CLOUDID = os.getenv('HEROKU_ES_CLOUDID')
+    HEROKU_ES_ENDPOINT = os.getenv('HEROKU_ES_ENDPOINT')
 
     def reload_env():
         load_dotenv(override=True)
