@@ -21,7 +21,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
         list: A list of events fetched from EventRegistry.
     """
     all_events = []
-        
+
     for curPage in range(start_page, end_page + 1):
         q = QueryEventsIter(
             conceptUri=concepts if concepts else "http://en.wikipedia.org/wiki/Climate_change",
@@ -44,6 +44,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
             ignoreSourceUri=None,
             ignoreSourceLocationUri=None,
             ignoreSourceGroupUri=None,
+            ignoreAuthorUri=None,
             ignoreLocationUri=None,
             ignoreLang=None,
             keywordsLoc="body",
