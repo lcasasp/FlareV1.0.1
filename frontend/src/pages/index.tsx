@@ -154,7 +154,7 @@ const Home: React.FC = () => {
     }
 
     const response = await axios.get(
-      `https://flare-api-6431634f8010.herokuapp.com//search?query=${query}`
+      `https://flare-api-6431634f8010.herokuapp.com/search?query=${query}`
     );
     const formattedData = response.data.map((article: any) => {
       const score = article._score;
