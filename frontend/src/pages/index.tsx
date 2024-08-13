@@ -96,8 +96,8 @@ const Home: React.FC = () => {
 
       const compositeScore =
         0.3 * article.totalArticleCount +
-        0.3 * article.socialScore +
-        0.4 * article.wgt;
+        0.1 * article.socialScore +
+        0.6 * article.wgt;
 
       return {
         ...article,
@@ -213,7 +213,10 @@ const Home: React.FC = () => {
     let filtered = data;
 
     // Apply category filter
-    if (updatedFilters.category && updatedFilters.category !== "All") {
+    if (updatedFilters.category && updatedFilters.category === "Breaking") {
+      filtered = topArticles;
+    }
+    else if (updatedFilters.category && updatedFilters.category !== "All") {
       filtered = filtered.filter((article) =>
         article.categories.some((cat) =>
           cat.label.includes(updatedFilters.category)
