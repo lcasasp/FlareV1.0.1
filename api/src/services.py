@@ -69,7 +69,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     return all_events
 
 
-def extract_and_prepare_event_data(event_response, es):
+def extract_and_prepare_event_data(event_response):
     """
     Filters and prepares event data for indexing into Elasticsearch.
 
@@ -79,30 +79,14 @@ def extract_and_prepare_event_data(event_response, es):
     Returns:
         list: A list of unique and processed events ready for indexing.
     """
-    unique_articles = []
+    logging.debug(f"Processing {len(event_response)} events")
+    processed_events = []
     for event in event_response:
-        # Filter out concepts with a score below 50
         if 'concepts' in event:
-            filtered_concepts = [
-                concept for concept in event['concepts'] if concept.get('score', 0) > 50]
+            filtered_concepts = [concept for concept in event['concepts'] if concept.get('score', 0) > 50]
             event['concepts'] = filtered_concepts
-
-        article_url = event['infoArticle']['eng']['url']
-
-        # Check if the article URL already exists in the index
-        query = {
-            "query": {
-                "term": {
-                    "infoArticle.eng.url": article_url
-                }
-            }
-        }
-        result = es.search(index="events", body=query)
-        if result['hits']['total']['value'] == 0:
-            unique_articles.append(event)
-
-    return unique_articles
-
+        processed_events.append(event)
+    return processed_events
 
 # Define Elasticsearch mapping
 event_mapping = {

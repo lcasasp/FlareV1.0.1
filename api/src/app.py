@@ -8,6 +8,8 @@ from datetime import datetime
 import logging
 
 app = Flask(__name__)
+app.config['CACHE_TYPE'] = 'SimpleCache'
+cache = Cache(app)
 CORS(app)
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
@@ -16,11 +18,12 @@ try:
     elasticsearch_password = os.getenv('ELASTIC_PW')
     es = Elasticsearch(
         os.getenv('FOUNDELASTICSEARCH_URL'),
-        http_auth=('elastic', os.getenv('HEROKU_ES_PASSWORD')),
+        basic_auth=('elastic', os.getenv('HEROKU_ES_PASSWORD')),
     )
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     raise
+
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -143,12 +146,17 @@ def fetch_and_index_events():
 
         events = fetch_events(categories=categories, concepts=concepts,
                               start_page=start_page, end_page=end_page)
-        processed_events = extract_and_prepare_event_data(events, es)
+        processed_events = extract_and_prepare_event_data(events)
 
-        for event in processed_events:
+        urls_seen = set()
+        unique_events = [event for event in processed_events if not (
+            event['infoArticle']['eng']['url'] in urls_seen or urls_seen.add(event['infoArticle']['eng']['url']))]
+
+        for event in unique_events:
+            logging.debug(f"Indexing event: {event['uri']}")
             es.index(index="events", body=event)
 
-        return jsonify(processed_events)
+        return jsonify(unique_events)
     except Exception as e:
         logging.error(f"Error indexing events: {e}")
         return jsonify({"error": "Failed to index events"}), 500
