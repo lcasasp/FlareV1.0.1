@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { getFresnelMat } from "./src/getFresnelMat";
 import getStarfield from "./src/getStarfield";
-import { clamp } from "three/src/math/MathUtils.js";
  
 export const createEarthGroup = (
   articles: any[],
@@ -37,9 +36,8 @@ export const createEarthGroup = (
   const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const material = new THREE.MeshPhongMaterial({
-    map: loader.load("/textures/2k_earth_daymap.jpg"),
-    specularMap: loader.load("/textures/2k_earth_specular_map.jpg"),
-    bumpMap: loader.load("/textures/01_earthbump1k.jpg"),
+    map: loader.load("/textures/10k_earth_normal_map.jpg"),
+    bumpMap: loader.load("/textures/4k_earthbump.jpg"),
     bumpScale: 5,
   });
 
@@ -120,7 +118,7 @@ export const createLights = () => {
   const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const lightsMat = new THREE.MeshBasicMaterial({
-    map: loader.load("/textures/2k_earth_nightmap.jpg"),
+    map: loader.load("/textures/10k_earth_nighttime.jpg"),
     blending: THREE.AdditiveBlending,
   });
   return new THREE.Mesh(geometry, lightsMat);

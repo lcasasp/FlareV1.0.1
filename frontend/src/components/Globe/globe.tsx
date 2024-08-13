@@ -27,7 +27,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     url: string;
   } | null>(null);
   const [infoWindowPosition, setInfoWindowPosition] = useState({ x: 0, y: 0 });
-
+  const isMouseOverGlobe = useRef(false);
   const isDragging = useRef(false);
 
   useEffect(() => {
@@ -78,8 +78,23 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     // Set up controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
-    controls.update();
     controls.enableZoom = false;
+    controls.enablePan = false;
+    controls.maxDistance = 5;
+    controls.minDistance = 2;
+
+    // Disable scroll to zoom
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: null,
+      RIGHT: THREE.MOUSE.ROTATE,
+    };
+    controls.touches = {
+      ONE: THREE.TOUCH.ROTATE,
+      TWO: THREE.TOUCH.DOLLY_ROTATE,
+    };
+    controls.update();
+
 
     // Create Earth and related objects
     const earthGroup = createEarthGroup(articles, markerRefs, gsap);
@@ -98,9 +113,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const stars = createStars();
     scene.add(stars);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(-2, 0.5, 1.5);
     scene.add(sunLight);
+
 
     // Animation loop
     const animate = () => {
@@ -140,8 +156,10 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           ...markerRefs.current,
         ]);
         if (barrierIntersects.length > 0) {
+          isMouseOverGlobe.current = true;
           rotationSpeedRef.current = 0;
         } else {
+          isMouseOverGlobe.current = false;
           rotationSpeedRef.current = 0.0004;
         }
       }
@@ -150,6 +168,16 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     };
 
     animate();
+
+    // Scroll handler to allow scroll only when over the globe
+    const handleScroll = () => {
+      if (isMouseOverGlobe.current) {
+        controls.enableZoom = true;
+      }
+      else {
+        controls.enableZoom = false;
+      }
+    };
 
     // Set up event listeners
     const handleWindowResize = () => {
@@ -163,6 +191,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       controls.update();
     };
 
+    window.addEventListener("wheel", handleScroll, false);
     window.addEventListener("resize", handleWindowResize, false);
 
     renderer.domElement.addEventListener(
@@ -193,6 +222,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
     // Clean up
     return () => {
+      window.removeEventListener("wheel", handleScroll);
       renderer.domElement.removeEventListener("mousedown", (event) =>
         handleMouseDown(event, isDragging)
       );
@@ -212,7 +242,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       );
       currentMount?.removeChild(renderer.domElement);
     };
-  }, [articles]); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [articles]);
 
   return (
     <div className="three-globe-container">

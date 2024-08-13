@@ -59,6 +59,7 @@ const Home: React.FC = () => {
     category: string;
     query: string;
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const { category } = filters;
 
@@ -114,6 +115,7 @@ const Home: React.FC = () => {
     setFilteredArticles(formattedData);
     setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
     computeTopArticles(formattedData, filters.category);
+    setIsLoaded(true);
   }, [filters.category]);
 
   useEffect(() => {
@@ -329,28 +331,30 @@ const Home: React.FC = () => {
     <div>
       <div className="container mx-auto p-4">
         <Header />
-        <Headlines
-          articles={topArticles}
-          onCategorySelect={handleCategorySelect}
-        />
-        <div className="globe-and-content">
-          <ThreeGlobe articles={filteredArticles} />
-          <div className="content-below">
-            <SearchBar
-              onResults={handleSearchResults}
-              onFilterChange={handleFilterChange}
-              onSortChange={handleSortChange}
-              availableConcepts={availableConcepts}
-              availableLocations={availableLocations}
-            />
-            {currentArticles.map((article, index) => (
-              <Article key={index} article={article} />
-            ))}
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
-            />
+        <div className={`fade-in ${isLoaded ? "show" : ""}`}>
+          <Headlines
+            articles={topArticles}
+            onCategorySelect={handleCategorySelect}
+          />
+          <div className="globe-and-content">
+            <ThreeGlobe articles={filteredArticles} />
+            <div className="content-below">
+              <SearchBar
+                onResults={handleSearchResults}
+                onFilterChange={handleFilterChange}
+                onSortChange={handleSortChange}
+                availableConcepts={availableConcepts}
+                availableLocations={availableLocations}
+              />
+              {currentArticles.map((article, index) => (
+                <Article key={index} article={article} />
+              ))}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           </div>
         </div>
       </div>
