@@ -6,7 +6,9 @@ load_dotenv()
 
 class Config:
     NEWS_API_KEY = os.getenv('NEWS_API_KEY')
-    ELASTIC_PW = os.getenv('ELASTIC_PW')
+    CLOUD_ID = os.getenv('ELASTIC_CLOUDID')
+    ES_KEY = os.getenv('ELASTIC_KEY')
+    ES_ENDPOINT = os.getenv('ELASTIC_ENDPOINT')
 
     def reload_env():
         load_dotenv(override=True)

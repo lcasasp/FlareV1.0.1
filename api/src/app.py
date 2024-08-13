@@ -1,6 +1,7 @@
 import os
 from flask import Flask, request, jsonify
-from elasticsearch import Elasticsearch
+from elasticsearch_serverless import Elasticsearch
+from config import Config
 from services import fetch_events, extract_and_prepare_event_data, event_mapping
 from flask_cors import CORS
 from datetime import datetime
@@ -12,16 +13,11 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
 
 try:
-    # elasticsearch_url = os.getenv('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
-    elasticsearch_url = 'http://localhost:9200'
-    elasticsearch_username = os.getenv('ELASTICSEARCH_USERNAME', 'elastic')
-    elasticsearch_password = os.getenv('ELASTIC_PW')
-    print(elasticsearch_url, elasticsearch_username, elasticsearch_password)
     es = Elasticsearch(
-        [elasticsearch_url],
-        basic_auth=(elasticsearch_username, elasticsearch_password),
-        verify_certs=False,
+        Config.ES_ENDPOINT,
+        api_key=Config.ES_KEY
     )
+    es.info()
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     raise
@@ -150,8 +146,7 @@ def fetch_and_index_events():
                               start_page=start_page, end_page=end_page)
         processed_events = extract_and_prepare_event_data(events, es)
 
-        for event in processed_events:
-            es.index(index="events", body=event)
+        es.bulk(operations=processed_events, pipeline="search-default-ingestion")
 
         return jsonify(processed_events)
     except Exception as e:

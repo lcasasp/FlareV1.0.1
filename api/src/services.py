@@ -1,11 +1,10 @@
 import os
 import requests
-from elasticsearch import Elasticsearch
 from eventregistry import *
 from datetime import datetime, timedelta
 
 er = EventRegistry(apiKey=os.getenv(
-    'APIKEY'), allowUseOfArchive=False)
+    'ER_APIKEY'), allowUseOfArchive=False)
 
 
 def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
