@@ -17,7 +17,6 @@ try:
         Config.ES_ENDPOINT,
         api_key=Config.ES_KEY
     )
-    es.info()
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
     raise
