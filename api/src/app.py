@@ -135,7 +135,6 @@ def fetch_and_index_events():
         pages = request.args.get('pages', '1-1')
         categories = request.args.get('categories')
         concepts = request.args.getlist('concepts')
-        days = int(request.args.get('days', 7))
 
         start_page, end_page = map(int, pages.split('-'))
 
@@ -143,7 +142,7 @@ def fetch_and_index_events():
             es.indices.create(index="events", ignore=400)
 
         events = fetch_events(categories=categories, concepts=concepts,
-                              start_page=start_page, end_page=end_page, days=days)
+                              start_page=start_page, end_page=end_page)
         processed_events = extract_and_prepare_event_data(events, es)
 
         for event in processed_events:

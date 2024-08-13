@@ -7,7 +7,7 @@ er = EventRegistry(apiKey=os.getenv(
     'ER_APIKEY'), allowUseOfArchive=False)
 
 
-def fetch_events(categories=None, concepts=None, start_page=1, end_page=5, days=7):
+def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     """
     Fetches events from EventRegistry API based on given categories and concepts.
 
@@ -21,8 +21,6 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5, days=
         list: A list of events fetched from EventRegistry.
     """
     all_events = []
-    if days <= 30: 
-        days = 30
         
     for curPage in range(start_page, end_page + 1):
         q = QueryEventsIter(
@@ -38,7 +36,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5, days=
             dateEnd=None,
             minArticlesInEvent=5,
             maxArticlesInEvent=999,
-            dateMentionStart=datetime.now() - timedelta(days=days),
+            dateMentionStart=datetime.now() - timedelta(days=30),
             dateMentionEnd=None,
             ignoreKeywords=None,
             ignoreConceptUri=None,
