@@ -61,9 +61,10 @@ const Home: React.FC = () => {
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
 
   const { category } = filters;
+  const backend_url = process.env.FLAS_API_URL
 
   const fetchArticles = useCallback(async () => {
-    const response = await axios.get("http://127.0.0.1:5000/articles");
+    const response = await axios.get(`${backend_url}/articles`);
     const formattedData = response.data.map((article: any) => {
       const title = article.title.eng;
       const summary = article.summary.eng;
@@ -152,7 +153,7 @@ const Home: React.FC = () => {
       return;
     }
 
-    const response = await axios.get(`http://127.0.0.1:5000/search?query=${query}`);
+    const response = await axios.get(`${backend_url}/search?query=${query}`);
     const formattedData = response.data.map((article: any) => {
       const score = article._score;
       const title = article._source.title.eng;
