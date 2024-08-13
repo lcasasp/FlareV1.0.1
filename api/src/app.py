@@ -145,7 +145,8 @@ def fetch_and_index_events():
                               start_page=start_page, end_page=end_page)
         processed_events = extract_and_prepare_event_data(events, es)
 
-        es.bulk(operations=processed_events, pipeline="search-default-ingestion")
+        for event in processed_events:
+            es.index(index="events", body=event)
 
         return jsonify(processed_events)
     except Exception as e:
