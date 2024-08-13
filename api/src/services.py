@@ -21,7 +21,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5, days=
         list: A list of events fetched from EventRegistry.
     """
     all_events = []
-    if days > 30: 
+    if days <= 30: 
         days = 30
         
     for curPage in range(start_page, end_page + 1):
