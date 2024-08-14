@@ -95,10 +95,7 @@ const Home: React.FC = () => {
           };
         });
 
-      const compositeScore =
-        0.3 * article.totalArticleCount +
-        0.1 * article.socialScore +
-        0.6 * article.wgt;
+      const compositeScore = article.wgt
 
       return {
         ...article,
@@ -111,10 +108,12 @@ const Home: React.FC = () => {
       };
     });
 
-    setArticles(formattedData);
-    setFilteredArticles(formattedData);
-    setTotalPages(Math.ceil(formattedData.length / ITEMS_PER_PAGE));
-    computeTopArticles(formattedData, filters.category);
+    const sortedData = formattedData.sort((a: { compositeScore: number; }, b: { compositeScore: number; }) => b.compositeScore - a.compositeScore);
+
+    setArticles(sortedData);
+    setFilteredArticles(sortedData);
+    setTotalPages(Math.ceil(sortedData.length / ITEMS_PER_PAGE));
+    computeTopArticles(sortedData, filters.category);
     setIsLoaded(true);
   }, [filters.category]);
 
