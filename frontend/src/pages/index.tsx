@@ -7,6 +7,7 @@ import SearchBar from "@/components/searchBar";
 import Pagination from "@/components/pagination";
 import Headlines from "@/components/headlines";
 import Footer from "@/components/footer";
+import Spinner from "@/components/spinner";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -60,6 +61,8 @@ const Home: React.FC = () => {
     query: string;
   }>({ location: "Any", concept: "Any", category: "All", query: "" });
   const [isLoaded, setIsLoaded] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(true);
+  const [showContent, setShowContent] = useState(false);
 
   const { category } = filters;
 
@@ -115,6 +118,10 @@ const Home: React.FC = () => {
     setTotalPages(Math.ceil(sortedData.length / ITEMS_PER_PAGE));
     computeTopArticles(sortedData, filters.category);
     setIsLoaded(true);
+      setShowSpinner(false);
+      setTimeout(() => {
+        setShowContent(true);
+      }, 500);
   }, [filters.category]);
 
   useEffect(() => {
@@ -323,6 +330,7 @@ const Home: React.FC = () => {
     <div>
       <div className="mx-auto p-4 items-center">
         <Header />
+        {showSpinner && <div className={`spinner ${isLoaded ? 'hidden' : 'visible'}`}><Spinner /></div>}
         <div className={`fade-in ${isLoaded ? "show" : ""}`}>
           <Headlines
             articles={topArticles}

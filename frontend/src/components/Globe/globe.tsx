@@ -199,7 +199,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       const newWidth = currentMount?.clientWidth || window.innerWidth;
       const newHeight = currentMount?.clientHeight || window.innerHeight;
       camera.aspect = newWidth / newHeight;
-      camera.updateProjectionMatrix();
+      updateCameraPosition();
       renderer.setSize(newWidth, newHeight);
     };
 

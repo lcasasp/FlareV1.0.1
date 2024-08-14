@@ -102,7 +102,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => handleKeyDown(e, "search")}
-          className="p-2 w-2/3 border rounded-l-full focus:outline-none pl-8"
+          className="p-2 w-2/3 border rounded-l-full focus:outline-none pl-5"
           style={{ fontFamily: "Times New Roman" }}
         />
         <button

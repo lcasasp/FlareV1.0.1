@@ -22,14 +22,14 @@ const Headlines: React.FC<HeadlinesProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const conveyorRef = useRef<HTMLDivElement>(null);
-  const displayCount = 5; // Number of items displayed at once
+  const displayCount = 5;
   const articleWidth = useRef<number>(0);
 
-  // Clones first few and last few articles for seamless looping
+  // infinite carousel
   const extendedArticles = [
-    ...articles.slice(-displayCount), // Clone last few
-    ...articles,                      // Original articles
-    ...articles.slice(0, displayCount), // Clone first few
+    ...articles.slice(-displayCount),
+    ...articles,             
+    ...articles.slice(0, displayCount),
   ];
 
   const advanceCarousel = useCallback(() => {
