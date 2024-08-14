@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { getFresnelMat } from "./src/getFresnelMat";
-import getStarfield from "./src/getStarfield";
  
 export const createEarthGroup = (
   articles: any[],
@@ -145,8 +144,4 @@ export const createGlow = () => {
   const glowMesh = new THREE.Mesh(geometry, fresnelMat);
   glowMesh.scale.setScalar(1.01);
   return glowMesh;
-};
-
-export const createStars = () => {
-  return getStarfield({ numStars: 2000 });
 };

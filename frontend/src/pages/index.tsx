@@ -329,7 +329,7 @@ const Home: React.FC = () => {
 
   return (
     <div>
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto p-4 items-center">
         <Header />
         <div className={`fade-in ${isLoaded ? "show" : ""}`}>
           <Headlines

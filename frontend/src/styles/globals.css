@@ -38,11 +38,6 @@ body {
   border-radius: 50%;
 }
 
-.header-categories {
-  flex-direction: row;
-  flex-wrap: wrap;
-  justify-content: center;
-}
 .header-category-btn {
   white-space: nowrap;
   transition: font-size 0.2s ease, padding 0.2s ease;
@@ -378,6 +373,12 @@ button:hover {
   color: #1e427b;
   text-align: center;
   padding-top: 5px;
+}
+
+@media (max-width: 1024px) {
+  .motto {
+    font-size: 1rem;
+  }
 }
 
 .about-card {

@@ -21,7 +21,6 @@ const Headlines: React.FC<HeadlinesProps> = ({
   const [activeCategory, setActiveCategory] = useState("All");
   const [currentIndex, setCurrentIndex] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const events = articles.slice(0, 10);
   const totalItems = 10;
   const displayCount = 5;

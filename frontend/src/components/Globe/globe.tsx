@@ -7,13 +7,7 @@ import {
   createLights,
   createClouds,
   createGlow,
-  createStars,
 } from "./materials";
-import {
-  handleMouseDown,
-  handleMouseMove,
-  handleMouseUp,
-} from "./eventHandlers";
 
 const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -78,19 +72,12 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     // Set up controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
-    controls.enableZoom = false;
+    controls.enableZoom = false; // Disable zoom initially
     controls.enablePan = false;
-    const width = window.innerWidth;
-    if (width < 450) {
-      controls.maxDistance = 4;
-    } else if (width < 600) {
-      controls.maxDistance = 3.5;
-    } else {
-      controls.maxDistance = 3;
-    }
+
+    controls.maxDistance = camera.position.z;
     controls.minDistance = 2;
     controls.update();
-
 
     // Create Earth and related objects
     const earthGroup = createEarthGroup(articles, markerRefs, gsap);
@@ -106,137 +93,112 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const glowMesh = createGlow();
     earthGroup.add(glowMesh);
 
-    const stars = createStars();
-    scene.add(stars);
-
     const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
     sunLight.position.set(-2, 0.5, 1.5);
     scene.add(sunLight);
-
 
     // Animation loop
     const animate = () => {
       requestAnimationFrame(animate);
 
-      earthGroup.rotation.y += rotationSpeedRef.current;
-      cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
-      stars.rotation.y -= rotationSpeedRef.current / 10;
+      if (mouse.current.x && mouse.current.y) {
+        raycaster.current.setFromCamera(mouse.current, camera);
+        const allObjects = [earthGroup, ...markerRefs.current];
+        // Check for intersections visible to the camera
+        const intersects = raycaster.current.intersectObjects(allObjects, true);
+        const cameraDirection = new THREE.Vector3();
+        camera.getWorldDirection(cameraDirection);
 
-      raycaster.current.setFromCamera(mouse.current, camera);
-
-      const intersects = raycaster.current.intersectObjects(markerRefs.current);
-
-      const cameraDirection = new THREE.Vector3();
-      camera.getWorldDirection(cameraDirection);
-
-      const visibleIntersects = intersects.filter((intersect) => {
-        const markerPosition = intersect.object.position.clone().normalize();
-        return cameraDirection.dot(markerPosition) < 0;
-      });
-
-      if (visibleIntersects.length > 0) {
-        const intersectedMarker = visibleIntersects[0].object;
-        setHoveredInfo({
-          title: intersectedMarker.userData.title,
-          image: intersectedMarker.userData.image,
-          url: intersectedMarker.userData.url,
-        });
-      } else {
-        setHoveredInfo(null);
+        if (intersects.length > 0 && intersects[0].object.visible) {
+          const intersected = intersects[0].object;
+          //Check it is a marker (has userData)
+          setHoveredInfo(
+            intersected.userData.url
+              ? {
+                  title: intersected.userData.title,
+                  image: intersected.userData.image,
+                  url: intersected.userData.url,
+                }
+              : null
+          );
+          isMouseOverGlobe.current = true;
+          rotationSpeedRef.current = 0;
+        } else {
+          setHoveredInfo(null);
+          isMouseOverGlobe.current = false;
+          rotationSpeedRef.current = 0.0004;
+        }
       }
 
-      if (mouse.current.x && mouse.current.y) {
-        const barrierIntersects = raycaster.current.intersectObjects([
-          earthGroup,
-          ...markerRefs.current,
-        ]);
-        if (barrierIntersects.length > 0) {
-          rotationSpeedRef.current = 0;
-          isMouseOverGlobe.current = true;
-        } else {
-          rotationSpeedRef.current = 0.0004;
-          isMouseOverGlobe.current = false;
-        }
-      } 
+      earthGroup.rotation.y += rotationSpeedRef.current;
+      cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // Scroll handler to allow scroll only when over the globe
+    // Event handlers
+    const handleMouseDown = () => {
+      isDragging.current = false;
+    };
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const bounds = renderer.domElement.getBoundingClientRect();
+      mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+      mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+      setInfoWindowPosition({
+        x: event.clientX - bounds.left + 50,
+        y: event.clientY - bounds.top - 50,
+      });
+      if (event.movementX !== 0 || event.movementY !== 0) {
+        isDragging.current = true;
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (!isDragging.current) {
+        raycaster.current.setFromCamera(mouse.current, camera);
+        const intersects = raycaster.current.intersectObjects(
+          markerRefs.current
+        );
+        if (intersects.length > 0) {
+          const intersectedMarker = intersects[0].object;
+          const url = intersectedMarker.userData.url;
+          if (url) {
+            window.open(url, "_blank");
+          }
+        }
+      }
+    };
+
     const handleScroll = () => {
-      if (isMouseOverGlobe.current) {
-        controls.enableZoom = true;
-      }
-      else {
-        controls.enableZoom = false;
-      }
+      controls.enableZoom = isMouseOverGlobe.current;
     };
 
-    // Set up event listeners
     const handleWindowResize = () => {
-      const newWidth = mountRef.current?.clientWidth || window.innerWidth;
-      const newHeight = mountRef.current?.clientHeight || window.innerHeight;
+      const newWidth = currentMount?.clientWidth || window.innerWidth;
+      const newHeight = currentMount?.clientHeight || window.innerHeight;
       camera.aspect = newWidth / newHeight;
+      camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
-      updateCameraPosition();
-
-      controls.target.set(0, 0, 0);
-      controls.update();
     };
 
-    renderer.domElement.addEventListener("wheel", handleScroll, false);
+    renderer.domElement.addEventListener("wheel", handleScroll, {
+      passive: false,
+    });
+    renderer.domElement.addEventListener("mousedown", handleMouseDown, false);
+    renderer.domElement.addEventListener("mousemove", handleMouseMove, false);
+    renderer.domElement.addEventListener("mouseup", handleMouseUp, false);
     window.addEventListener("resize", handleWindowResize, false);
-
-    renderer.domElement.addEventListener(
-      "mousedown",
-      (event) => handleMouseDown(event, isDragging),
-      false
-    );
-    renderer.domElement.addEventListener(
-      "mousemove",
-      (event) =>
-        handleMouseMove(event, mouse, isDragging, setInfoWindowPosition),
-      false
-    );
-    renderer.domElement.addEventListener(
-      "mouseup",
-      (event) =>
-        handleMouseUp(
-          event,
-          isDragging,
-          raycaster,
-          camera,
-          markerRefs,
-          mouse,
-          setHoveredInfo
-        ),
-      false
-    );
 
     // Clean up
     return () => {
-      renderer.domElement.removeEventListener("wheel", (event) =>
-        handleScroll()
-      );
-      renderer.domElement.removeEventListener("mousedown", (event) =>
-        handleMouseDown(event, isDragging)
-      );
-      renderer.domElement.removeEventListener("mousemove", (event) =>
-        handleMouseMove(event, mouse, isDragging, setInfoWindowPosition)
-      );
-      renderer.domElement.removeEventListener("mouseup", (event) =>
-        handleMouseUp(
-          event,
-          isDragging,
-          raycaster,
-          camera,
-          markerRefs,
-          mouse,
-          setHoveredInfo
-        )
-      );
+      renderer.domElement.removeEventListener("wheel", handleScroll);
+      renderer.domElement.removeEventListener("mousedown", handleMouseDown);
+      renderer.domElement.removeEventListener("mousemove", handleMouseMove);
+      renderer.domElement.removeEventListener("mouseup", handleMouseUp);
+      window.removeEventListener("resize", handleWindowResize);
       currentMount?.removeChild(renderer.domElement);
     };
   }, [articles]);
