@@ -1,15 +1,14 @@
 import os
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch, helpers
-from .config import Config
-from .services import fetch_events, extract_and_prepare_event_data, event_mapping
+from config import Config
+from services import *
 from flask_cors import CORS
 from datetime import datetime
 import logging
 
 app = Flask(__name__)
 CORS(app)
-app.config['CACHE_TYPE'] = 'SimpleCache'
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
@@ -71,59 +70,9 @@ def search_events():
         query = request.args.get('query', default="*", type=str)
         logging.debug(f"Received query: {query}")
 
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        search_body = {
-            "query": {
-                "function_score": {
-                    "query": {
-                        "bool": {
-                            "should": [
-                                {
-                                    "multi_match": {
-                                        "query": query,
-                                        "fields": ["title.eng^3", "summary.eng", "concepts.label.eng^2"],
-                                        "type": "best_fields",
-                                        "operator": "or",
-                                        "fuzziness": "AUTO"
-                                    }
-                                }
-                            ],
-                            "filter": [
-                                {
-                                    "range": {
-                                        "eventDate": {
-                                            "gte": "now-30d/d"
-                                        }
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "functions": [
-                        {
-                            "field_value_factor": {
-                                "field": "wgt",
-                                "modifier": "log1p",
-                                "factor": 0.1
-                            }
-                        },
-                        {
-                            "gauss": {
-                                "eventDate": {
-                                    "origin": current_date,
-                                    "scale": "7d",
-                                    "offset": "1d",
-                                    "decay": 0.9
-                                }
-                            }
-                        }
-                    ],
-                    "score_mode": "sum",
-                    "boost_mode": "sum"
-                }
-            },
-            "size": 50
-        }
+        search_body = build_search_query(query)
+
+        # add_custom_scoring(search_body)
 
         search_result = es.search(index="events", body=search_body)
         return search_result['hits']['hits']

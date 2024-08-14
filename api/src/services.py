@@ -24,7 +24,7 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
 
     for curPage in range(start_page, end_page + 1):
         q = QueryEventsIter(
-            conceptUri=concepts if concepts else "http://en.wikipedia.org/wiki/Climate_change",
+            conceptUri=concepts,
             categoryUri=categories,
             sourceUri=None,
             sourceLocationUri=None,
@@ -86,6 +86,68 @@ def extract_and_prepare_event_data(event_response):
             event['concepts'] = filtered_concepts
         processed_events.append(event)
     return processed_events
+
+def build_search_query(query):
+    search_body = {
+        "query": {
+            "bool": {
+                "must": [
+                    {
+                        "multi_match": {
+                            "query": query,
+                            "fields": [
+                                "title.eng^2.5",
+                                "summary.eng^1",
+                                "concepts.properties.label.eng^2.5",
+                            ],
+                            "type": "best_fields",
+                            "fuzziness": "AUTO"
+                        }
+                    }
+                ],
+                "should": [
+                    {
+                        "match": {
+                            "concepts.label.eng": {
+                                "query": query,
+                                "boost": 2
+                            }
+                        }
+                    }
+                ],
+            }
+        },
+        "size": 100
+    }
+
+    return search_body
+
+# def add_custom_scoring(search_body):
+#     """Adds custom scoring functions to the search query."""
+#     search_body["query"]["bool"].setdefault("must", []).append({
+#         "function_score": {
+#             "query": search_body["query"]["bool"]["must"][0], 
+#             "functions": [
+#                 {
+#                     "gauss": {
+#                         "eventDate": {
+#                             "origin": "now",
+#                             "scale": "15d", 
+#                             "decay": 0.3
+#                         }
+#                     }
+#                 },
+#                 {
+#                     "field_value_factor": {
+#                         "field": "socialScore",
+#                         "factor": 1.2,  # Slightly reduced impact
+#                         "modifier": "log1p"
+#                     }
+#                 }
+#             ],
+#             "boost_mode": "multiply"
+#         }
+#     })
 
 # Define Elasticsearch mapping
 event_mapping = {
