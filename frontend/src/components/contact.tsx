@@ -1,6 +1,5 @@
-import React, { useRef } from "react";
+import React from "react";
 import { Icons } from "../utils/icons";
-import useMousePosition from "@/hooks/useMousePosition";
 import Image from "next/image";
 
 const Icon: React.FC<{ path: string; onClick?: () => void }> = ({

@@ -48,7 +48,7 @@ const Header: React.FC = () => {
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link href="/">
             <div className="flex items-center">
-              <Image src="/flare.png" alt="Flare Logo" width={40} height={40} />
+              <Image src="/favicon.ico" alt="Logo" width={40} height={40} />
               <h1 className="title text-xl font-bold ml-2">Flare</h1>
             </div>
           </Link>
