@@ -25,12 +25,8 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const isDragging = useRef(false);
 
   const isTouchscreen = () => {
-    return (
-        'ontouchstart' in window || 
-        navigator.maxTouchPoints > 0
-      );
+    return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   };
-
 
   useEffect(() => {
     // Clean up previous markers
@@ -81,9 +77,11 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
     controls.enableZoom = false; // Disable zoom initially
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.2;
     controls.enablePan = false;
 
-    controls.maxDistance = camera.position.z;
+    controls.maxDistance = 5;
     controls.minDistance = 2;
     controls.update();
 
@@ -109,32 +107,37 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const animate = () => {
       requestAnimationFrame(animate);
 
-      if (mouse.current.x && mouse.current.y) {
-        raycaster.current.setFromCamera(mouse.current, camera);
-        const allObjects = [earthGroup, ...markerRefs.current];
-        // Check for intersections visible to the camera
-        const intersects = raycaster.current.intersectObjects(allObjects, true);
-        const cameraDirection = new THREE.Vector3();
-        camera.getWorldDirection(cameraDirection);
-
-        if (intersects.length > 0 && intersects[0].object.visible) {
-          const intersected = intersects[0].object;
-          //Check it is a marker (has userData)
-          setHoveredInfo(
-            intersected.userData.url
-              ? {
-                  title: intersected.userData.title,
-                  image: intersected.userData.image,
-                  url: intersected.userData.url,
-                }
-              : null
+      if (!isTouchscreen()) {
+        if (mouse.current.x && mouse.current.y) {
+          raycaster.current.setFromCamera(mouse.current, camera);
+          const allObjects = [earthGroup, ...markerRefs.current];
+          // Check for intersections visible to the camera
+          const intersects = raycaster.current.intersectObjects(
+            allObjects,
+            true
           );
-          isMouseOverGlobe.current = true;
-          rotationSpeedRef.current = 0;
-        } else {
-          setHoveredInfo(null);
-          isMouseOverGlobe.current = false;
-          rotationSpeedRef.current = 0.0004;
+          const cameraDirection = new THREE.Vector3();
+          camera.getWorldDirection(cameraDirection);
+
+          if (intersects.length > 0 && intersects[0].object.visible) {
+            const intersected = intersects[0].object;
+            setHoveredInfo(
+              intersected.userData.url
+                ? {
+                    title: intersected.userData.title,
+                    image: intersected.userData.image,
+                    url: intersected.userData.url,
+                  }
+                : null
+            );
+
+            isMouseOverGlobe.current = true;
+            rotationSpeedRef.current = 0;
+          } else {
+            setHoveredInfo(null);
+            isMouseOverGlobe.current = false;
+            rotationSpeedRef.current = 0.0004;
+          }
         }
       }
 
@@ -183,7 +186,9 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const handleTouchMove = (event: TouchEvent) => {
       if (isTouchscreen() && event.touches.length === 2) {
         controls.enableZoom = true;
-        event.preventDefault(); // Prevent scrolling
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.2;
+        event.preventDefault();
       }
     };
 
@@ -204,9 +209,13 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     };
 
     if (isTouchscreen()) {
-      renderer.domElement.addEventListener("touchmove", handleTouchMove, { passive: false });
+      renderer.domElement.addEventListener("touchmove", handleTouchMove, {
+        passive: false,
+      });
     } else {
-      renderer.domElement.addEventListener("wheel", handleScroll, { passive: false });
+      renderer.domElement.addEventListener("wheel", handleScroll, {
+        passive: false,
+      });
     }
     renderer.domElement.addEventListener("mousedown", handleMouseDown, false);
     renderer.domElement.addEventListener("mousemove", handleMouseMove, false);
@@ -229,27 +238,48 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
 
   return (
     <div className="three-globe-container">
-      <div ref={mountRef} className="background-globe cropped-globe">
-        {hoveredInfo && (
-          <div
-            className="info-window"
-            style={{ top: infoWindowPosition.y, left: infoWindowPosition.x }}
-          >
-            <h3>{hoveredInfo.title}</h3>
-            <img src={hoveredInfo.image} alt={hoveredInfo.title} />
-          </div>
-        )}
-      </div>
+      {hoveredInfo && (
+        <div
+          className="info-window"
+          style={{ top: infoWindowPosition.y, left: infoWindowPosition.x }}
+        >
+          <h3>{hoveredInfo.title}</h3>
+          <img src={hoveredInfo.image} alt={hoveredInfo.title} />
+        </div>
+      )}
+      <div ref={mountRef} className="background-globe cropped-globe"></div>
       <style jsx>{`
-        .three-globe-container {
-          position: relative;
-          bottom: 0;
-        }
         .background-globe {
-          overflow: hidden;
           position: relative;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          overflow: hidden;
           transform: translateY(-100px);
           user-select: none;
+        }
+
+        .background-globe::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+          pointer-events: none;
+          background-color: transparent;
+        }
+
+        .three-globe-container {
+          position: relative;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+        }
+
+        .three-globe-container .background-globe {
+          pointer-events: auto; /* Re-enable pointer events only for the globe */
         }
         .cropped-globe {
           clip-path: inset(100px 0px 150px 0px);
