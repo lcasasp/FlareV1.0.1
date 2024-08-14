@@ -21,6 +21,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [sortBy, setSortBy] = useState("None");
   const [showLocationOptions, setShowLocationOptions] = useState(false);
   const [showConceptOptions, setShowConceptOptions] = useState(false);
+  const [conceptPlaceholder, setConceptPlaceholder] = useState("Any");
+  const [locationPlaceholder, setLocationPlaceholder] = useState("Any");
 
   const locationRef = useRef<HTMLDivElement>(null);
   const conceptRef = useRef<HTMLDivElement>(null);
@@ -117,14 +119,22 @@ const SearchBar: React.FC<SearchBarProps> = ({
           </label>
           <input
             type="text"
-            placeholder="Any"
+            placeholder={locationPlaceholder}
             id="location"
             value={location}
-            onChange={(e) => {
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setLocation(e.target.value);
               setShowLocationOptions(true);
             }}
-            onKeyDown={(e) => handleKeyDown(e, "location")}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              handleKeyDown(e, "location");
+              if (e.key === "Enter") {
+                handleFilterChange(e.currentTarget.value, concept);
+                setLocation("");
+                setShowLocationOptions(false);
+                setLocationPlaceholder(e.currentTarget.value === "" ? "Any" : e.currentTarget.value);
+              }
+            }}
             className="p-2 w-full border rounded"
           />
           {showLocationOptions && location && (
@@ -134,8 +144,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   key={index}
                   onClick={() => {
                     handleFilterChange(loc, concept);
-                    setLocation(loc);
+                    setLocation("");
                     setShowLocationOptions(false);
+                    setLocationPlaceholder(loc === "" ? "" : loc); 
                   }}
                   className="p-2 cursor-pointer hover:bg-gray-200"
                 >
@@ -151,14 +162,22 @@ const SearchBar: React.FC<SearchBarProps> = ({
           </label>
           <input
             type="text"
-            placeholder="Any"
+            placeholder={conceptPlaceholder}
             id="concept"
             value={concept}
             onChange={(e) => {
               setConcept(e.target.value);
               setShowConceptOptions(true);
             }}
-            onKeyDown={(e) => handleKeyDown(e, "concept")}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+              handleKeyDown(e, "concept");
+              if (e.key === "Enter") {
+                handleFilterChange(e.currentTarget.value, location);
+                setConcept("");
+                setShowConceptOptions(false);
+                setConceptPlaceholder(e.currentTarget.value === "" ? "Any" : e.currentTarget.value); 
+              }
+            }}
             className="p-2 w-full border rounded"
           />
           {showConceptOptions && concept && (
@@ -168,8 +187,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
                   key={index}
                   onClick={() => {
                     handleFilterChange(location, con);
-                    setConcept(con);
+                    setConcept("");
                     setShowConceptOptions(false);
+                    setConceptPlaceholder(con === "" ? "Any" : con); 
                   }}
                   className="p-2 cursor-pointer hover:bg-gray-200"
                 >

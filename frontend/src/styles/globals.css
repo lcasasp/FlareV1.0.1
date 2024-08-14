@@ -284,7 +284,8 @@ button:hover {
 
   .news-headline-system .conveyor-belt .article h4 {
     font-size: 0.625rem;
-    height: 1.5rem;
+    height: 1.8rem;
+    margin-bottom: 0;
   }
 }
 

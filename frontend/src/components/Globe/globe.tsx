@@ -24,6 +24,14 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
   const isMouseOverGlobe = useRef(false);
   const isDragging = useRef(false);
 
+  const isTouchscreen = () => {
+    return (
+        'ontouchstart' in window || 
+        navigator.maxTouchPoints > 0
+      );
+  };
+
+
   useEffect(() => {
     // Clean up previous markers
     markerRefs.current.forEach((marker) => marker.parent?.remove(marker));
@@ -172,8 +180,19 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       }
     };
 
-    const handleScroll = () => {
-      controls.enableZoom = isMouseOverGlobe.current;
+    const handleTouchMove = (event: TouchEvent) => {
+      if (isTouchscreen() && event.touches.length === 2) {
+        controls.enableZoom = true;
+        event.preventDefault(); // Prevent scrolling
+      }
+    };
+
+    const handleScroll = (event: WheelEvent) => {
+      if (isTouchscreen()) {
+        controls.enableZoom = true;
+      } else {
+        controls.enableZoom = isMouseOverGlobe.current;
+      }
     };
 
     const handleWindowResize = () => {
@@ -184,17 +203,22 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       renderer.setSize(newWidth, newHeight);
     };
 
-    renderer.domElement.addEventListener("wheel", handleScroll, {
-      passive: false,
-    });
+    if (isTouchscreen()) {
+      renderer.domElement.addEventListener("touchmove", handleTouchMove, { passive: false });
+    } else {
+      renderer.domElement.addEventListener("wheel", handleScroll, { passive: false });
+    }
     renderer.domElement.addEventListener("mousedown", handleMouseDown, false);
     renderer.domElement.addEventListener("mousemove", handleMouseMove, false);
     renderer.domElement.addEventListener("mouseup", handleMouseUp, false);
     window.addEventListener("resize", handleWindowResize, false);
 
-    // Clean up
     return () => {
-      renderer.domElement.removeEventListener("wheel", handleScroll);
+      if (isTouchscreen()) {
+        renderer.domElement.removeEventListener("touchmove", handleTouchMove);
+      } else {
+        renderer.domElement.removeEventListener("wheel", handleScroll);
+      }
       renderer.domElement.removeEventListener("mousedown", handleMouseDown);
       renderer.domElement.removeEventListener("mousemove", handleMouseMove);
       renderer.domElement.removeEventListener("mouseup", handleMouseUp);

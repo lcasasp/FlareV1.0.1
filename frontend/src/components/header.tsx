@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 
 const Header: React.FC = () => {
-  const [showMotto, setShowMotto] = useState(true);
+  const [showMotto, setShowMotto] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
