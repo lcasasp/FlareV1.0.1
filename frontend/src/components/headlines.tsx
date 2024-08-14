@@ -21,15 +21,20 @@ const Headlines: React.FC<HeadlinesProps> = ({
   const [activeCategory, setActiveCategory] = useState("All");
   const [currentIndex, setCurrentIndex] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const events = articles.slice(0, 10);
-  const totalItems = 10;
-  const displayCount = 5;
+  const conveyorRef = useRef<HTMLDivElement>(null);
+  const displayCount = 5; // Number of items displayed at once
+  const articleWidth = useRef<number>(0);
+
+  // Clones first few and last few articles for seamless looping
+  const extendedArticles = [
+    ...articles.slice(-displayCount), // Clone last few
+    ...articles,                      // Original articles
+    ...articles.slice(0, displayCount), // Clone first few
+  ];
 
   const advanceCarousel = useCallback(() => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex >= totalItems - displayCount ? 0 : prevIndex + 1
-    );
-  }, [totalItems, displayCount]);
+    setCurrentIndex((prevIndex) => prevIndex + 1);
+  }, []);
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -51,16 +56,48 @@ const Headlines: React.FC<HeadlinesProps> = ({
 
   const handlePrevClick = useCallback(() => {
     stopTimer();
-    setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? totalItems - displayCount : prevIndex - 1
-    );
+    setCurrentIndex((prevIndex) => prevIndex - 1);
     startTimer();
-  }, [stopTimer, startTimer, totalItems, displayCount]);
+  }, [stopTimer, startTimer]);
 
   useEffect(() => {
     startTimer();
     return () => stopTimer();
   }, [startTimer, stopTimer]);
+
+  useEffect(() => {
+    const articleElement = document.querySelector('.news-headline-system .conveyor-belt .article');
+    if (articleElement) {
+      const width = articleElement.clientWidth;
+      articleWidth.current = width;
+    }
+      
+    if (conveyorRef.current) {
+      const totalItemsDisplayed = extendedArticles.length;
+
+      // Handle looping forward
+      if (currentIndex >= totalItemsDisplayed - 5) {
+        setTimeout(() => {
+          conveyorRef.current!.style.transition = "none";
+          setCurrentIndex(5);
+          conveyorRef.current!.style.transform = `translateX(-${5 * Number(articleWidth.current)}px)`;
+        }, 500); // Match the transition duration
+      }
+
+      // Handle looping backward
+      if (currentIndex <= 0) {
+        setTimeout(() => {
+          conveyorRef.current!.style.transition = "none";
+          setCurrentIndex(totalItemsDisplayed - 10);
+          conveyorRef.current!.style.transform = `translateX(-${(totalItemsDisplayed - 10) *  Number(articleWidth.current)}px)`;
+        }, 500); // Match the transition duration
+      }
+
+      // Normal movement
+      conveyorRef.current.style.transition = "transform 0.5s ease-in-out";
+      conveyorRef.current.style.transform = `translateX(-${currentIndex *  Number(articleWidth.current)}px)`;
+    }
+  }, [currentIndex, extendedArticles.length, displayCount]);
 
   const handleCategoryClick = (category: string) => {
     const newCategory = category === activeCategory ? "All" : category;
@@ -68,33 +105,32 @@ const Headlines: React.FC<HeadlinesProps> = ({
     onCategorySelect(newCategory);
   };
 
-  const displayedArticles = events.slice(currentIndex, currentIndex + 5);
-  if (displayedArticles.length < 5) {
-    displayedArticles.push(...events.slice(0, 5 - displayedArticles.length));
-  }
-
   return (
     <div className="news-headline-system">
       <div className="conveyor-belt-container">
         <button className="nav-button prev-button" onClick={handlePrevClick}>
           &#10094;
         </button>
-        <div
-          className="conveyor-belt"
-          style={{ transform: `translateX(-${currentIndex * 20}%)` }}
-        >
-          {events.map((article, index) => (
-            <div
-              key={index}
-              className="article"
-              onClick={() => window.open(article.infoArticle.eng.url, "_blank")}
-            >
-              <img src={article.image} alt={article.title} />
-              <h4>
-                <b>{article.title}</b>
-              </h4>
-            </div>
-          ))}
+        <div className="conveyor-belt-wrapper" style={{ overflow: 'hidden', width: '100%' }}>
+          <div
+            className="conveyor-belt"
+            ref={conveyorRef}
+            style={{ display: 'flex', transition: 'transform 0.5s ease-in-out' }}
+          >
+            {extendedArticles.map((article, index) => (
+              <div
+                key={index}
+                className="article"
+                style={{ flex: `0 0 ${100 / displayCount}%` }}
+                onClick={() => window.open(article.infoArticle.eng.url, "_blank")}
+              >
+                <img src={article.image} alt={article.title} />
+                <h4>
+                  <b>{article.title}</b>
+                </h4>
+              </div>
+            ))}
+          </div>
         </div>
         <button className="nav-button next-button" onClick={handleNextClick}>
           &#10095;

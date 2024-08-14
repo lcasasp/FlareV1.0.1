@@ -115,7 +115,7 @@ button:hover {
 
 .news-headline-system .conveyor-belt-container {
   display: flex;
-  align-items: center;
+  align-items: center;  
   position: relative;
   overflow: hidden;
   width: 100%;
@@ -123,12 +123,17 @@ button:hover {
 
 .news-headline-system .conveyor-belt {
   display: flex;
-  transition: transform 1s ease-in-out;
-  width: 500%;
+  transition: transform .5s ease-in-out;
+}
+
+.conveyor-belt-wrapper {
+  width: 100%;
+  overflow: hidden;
 }
 
 .news-headline-system .conveyor-belt .article {
-  flex: 0 0 20%; /* 5 articles per view */
+  flex: 0 0 20%;
+  min-width: 200px;
   box-sizing: border-box;
   padding: 10px;
   text-align: center;
@@ -171,22 +176,22 @@ button:hover {
 }
 
 .news-headline-system .nav-button {
-  background-color: rgba(0, 0, 0, 0.3);
+  background-color: #132c5439;
   color: white;
   border: none;
   padding: 10px;
   cursor: pointer;
   z-index: 1;
-  transition: background-color 0.3s;
+  transition: background-color 0.5s;
   border-radius: 5px;
 }
 
 .news-headline-system .nav-button:hover {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: #132c54;
 }
 
 .news-headline-system .nav-button:hover {
-  background-color: rgba(0, 0, 0, 0.8);
+  background-color: #132c54;
 }
 
 .news-headline-system .prev-button {
