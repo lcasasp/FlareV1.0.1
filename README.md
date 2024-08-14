@@ -1,4 +1,4 @@
-# Flare
+# Flare  - https://flare-news.com
 
 **Flare** is an innovative, open-source platform designed to transform how you explore and understand global climate change. At its core, Flare combines advanced data visualization with powerful search capabilities, offering a unique way to stay informed about the most pressing environmental issues of our time.
 
