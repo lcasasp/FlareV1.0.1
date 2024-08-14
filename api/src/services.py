@@ -98,24 +98,55 @@ def build_search_query(query):
                             "fields": [
                                 "title.eng^2.5",
                                 "summary.eng^1",
-                                "concepts.properties.label.eng^2.5",
+                                "concepts.label.eng^2.5"
                             ],
-                            "type": "best_fields",
+                            "type": "most_fields",
                             "fuzziness": "AUTO"
                         }
                     }
                 ],
                 "should": [
                     {
-                        "match": {
-                            "concepts.label.eng": {
-                                "query": query,
-                                "boost": 2
-                            }
+                        "multi_match": {
+                            "query": query,
+                            "fields": [
+                                "concepts.label.eng^2",
+                                "summary.eng^1"
+                            ],
+                            "type": "phrase",
+                            "boost": 2
                         }
                     }
                 ],
-            }
+                "must": [
+                    {
+                        "function_score": {  # Custom scoring to boost recent articles
+                                "query": {
+                                    "range": {
+                                        "eventDate": {
+                                            "gte": "now-30d/d"
+                                        }
+                                    }
+                                },
+                                "functions": [
+                                    {
+                                        "gauss": {
+                                            "eventDate": {
+                                                "origin": "now",
+                                                "scale": "10d",
+                                                "offset": "2d",
+                                                "decay": 0.5
+                                            }
+                                        }
+                                    }
+                                ],
+                                "score_mode": "sum",
+                                "boost_mode": "multiply"
+                            }
+                        }
+                ]
+            },
+            
         },
         "size": 100
     }

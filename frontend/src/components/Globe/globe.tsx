@@ -77,8 +77,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
     controls.enableZoom = false; // Disable zoom initially
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.2;
     controls.enablePan = false;
 
     controls.maxDistance = 5;
@@ -99,9 +97,8 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const glowMesh = createGlow();
     earthGroup.add(glowMesh);
 
-    const sunLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    sunLight.position.set(-2, 0.5, 1.5);
-    scene.add(sunLight);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.25);
+    scene.add(ambientLight);
 
     // Animation loop
     const animate = () => {
@@ -186,8 +183,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     const handleTouchMove = (event: TouchEvent) => {
       if (isTouchscreen() && event.touches.length === 2) {
         controls.enableZoom = true;
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.2;
         event.preventDefault();
       }
     };

@@ -246,13 +246,6 @@ const Home: React.FC = () => {
       );
     }
 
-    // Apply search query filter
-    if (updatedFilters.query && updatedFilters.query.trim() !== "") {
-      filtered = filtered.filter((article) =>
-        article.title.toLowerCase().includes(updatedFilters.query.toLowerCase())
-      );
-    }
-
     // Update filtered articles and reset pagination
     setFilteredArticles(filtered);
     setCurrentPage(1);
