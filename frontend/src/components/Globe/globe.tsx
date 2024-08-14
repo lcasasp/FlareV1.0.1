@@ -247,16 +247,16 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           <img src={hoveredInfo.image} alt={hoveredInfo.title} />
         </div>
       )}
-      <div ref={mountRef} className="background-globe cropped-globe"></div>
+      <div ref={mountRef} className="background-globe"></div>
       <style jsx>{`
         .background-globe {
           position: relative;
           width: 100%;
           height: 100%;
-          border-radius: 50%;
-          overflow: hidden;
-          transform: translateY(-100px);
+          border-radius: 100%;
           user-select: none;
+          overflow: visible;
+          margin: 0 auto; /* Add this line to center the background-globe */
         }
 
         .background-globe::after {
@@ -264,25 +264,26 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           position: absolute;
           top: 0;
           left: 0;
-          width: 100%;
+          width: 60%;
           height: 100%;
-          border-radius: 50%;
+          border-radius: 100%;
           pointer-events: none;
           background-color: transparent;
+          overflow: visible;
         }
 
         .three-globe-container {
           position: relative;
           width: 100%;
           height: 100%;
+          transform: translateY(-100px);
           pointer-events: none;
+          overflow: visible
         }
 
         .three-globe-container .background-globe {
-          pointer-events: auto; /* Re-enable pointer events only for the globe */
-        }
-        .cropped-globe {
-          clip-path: inset(100px 0px 150px 0px);
+          pointer-events: auto;
+          overflow: visible;
         }
         .info-window {
           background: rgba(0, 0, 0, 0.7);
