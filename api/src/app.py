@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch, helpers
-from config import Config
-from services import *
+from .config import Config
+from .services import *
 from flask_cors import CORS
 from datetime import datetime
 import logging
