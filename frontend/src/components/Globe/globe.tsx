@@ -80,7 +80,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     controls.enablePan = false;
 
     controls.maxDistance = 5;
-    controls.minDistance = 2;
+    controls.minDistance = 1.3;
     controls.update();
 
     // Create Earth and related objects
@@ -113,8 +113,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
             allObjects,
             true
           );
-          const cameraDirection = new THREE.Vector3();
-          camera.getWorldDirection(cameraDirection);
 
           if (intersects.length > 0 && intersects[0].object.visible) {
             const intersected = intersects[0].object;
@@ -170,7 +168,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         const intersects = raycaster.current.intersectObjects(
           markerRefs.current
         );
-        if (intersects.length > 0) {
+        if (intersects.length > 0 && intersects[0].object.visible) {
           const intersectedMarker = intersects[0].object;
           const url = intersectedMarker.userData.url;
           if (url) {
@@ -201,6 +199,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       camera.aspect = newWidth / newHeight;
       updateCameraPosition();
       renderer.setSize(newWidth, newHeight);
+      controls.update()
     };
 
     if (isTouchscreen()) {

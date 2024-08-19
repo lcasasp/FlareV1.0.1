@@ -63,24 +63,26 @@ const Header: React.FC = () => {
           </nav>
         </div>
         {showMotto && (
-          <h2 className="text-xl font-bold mb-2 motto">
-            Search for a Better Climate
-          </h2>
+          <>
+            <h2 className="text-xl font-bold mb-2 motto">
+              Search for a Better Climate
+            </h2>
+            <nav className="md:flex items-center mt-4 md:mt-0">
+              <Link
+                href="/about"
+                className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200"
+              >
+                About
+              </Link>
+              <button
+                onClick={handleDonateClick}
+                className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200"
+              >
+                Donate
+              </button>
+            </nav>
+          </>
         )}
-        <nav className="hidden md:flex items-center mt-4 md:mt-0">
-          <Link
-            href="/about"
-            className="text-gray-700 px-4 hover:text-gray-900 transition-colors duration-200"
-          >
-            About
-          </Link>
-          <button
-            onClick={handleDonateClick}
-            className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors duration-200"
-          >
-            Donate
-          </button>
-        </nav>
       </div>
     </header>
   );
