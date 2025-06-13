@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 er = EventRegistry(apiKey=os.getenv(
     'ER_APIKEY'), allowUseOfArchive=False)
 
-
 def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     """
     Fetches events from EventRegistry API based on given categories and concepts.

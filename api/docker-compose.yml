@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.0
+    container_name: es-dev
+    environment:
+      - node.name=es-dev
+      - discovery.type=single-node
+      - xpack.security.enabled=false      # off for local only
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api:
+    build: .
+    container_name: flask-api
+    environment:
+      - ELASTIC_URL=http://elasticsearch:9200
+    ports:
+      - "5000:5000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./src:/api/src
+      - ./flare-snapshot.json:/api/flare-snapshot.json
+
+volumes:
+  esdata:
+    driver: local

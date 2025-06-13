@@ -88,9 +88,7 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
       </h3>
       <p className="text-gray-600 text-sm mb-2">{article.eventDate}</p>
       <h3 className="text-sm mb-2">
-        <span style={{ fontWeight: "bold", color: "#064273" }}>
-          Sentiment:
-        </span>{" "}
+        <span style={{ fontWeight: "bold", color: "#064273" }}>Sentiment:</span>{" "}
         <span style={{ fontWeight: "bold", color: sentimentColor }}>
           {sentimentLabel} ({article.sentiment.toFixed(2)})
         </span>

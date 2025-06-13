@@ -8,6 +8,7 @@ import Pagination from "@/components/pagination";
 import Headlines from "@/components/headlines";
 import Footer from "@/components/footer";
 import Spinner from "@/components/spinner";
+import { API_CONFIG } from "@/constants/config";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -67,9 +68,7 @@ const Home: React.FC = () => {
   const { category } = filters;
 
   const fetchArticles = useCallback(async () => {
-    const response = await axios.get(
-      "https://flare-api-6431634f8010.herokuapp.com/articles"
-    );
+    const response = await axios.get(`${API_CONFIG.BASE_URL}/articles`);
     const formattedData = response.data.map((article: any) => {
       const title = article.title.eng;
       const summary = article.summary.eng;
@@ -98,7 +97,7 @@ const Home: React.FC = () => {
           };
         });
 
-      const compositeScore = article.wgt
+      const compositeScore = article.wgt;
 
       return {
         ...article,
@@ -111,17 +110,20 @@ const Home: React.FC = () => {
       };
     });
 
-    const sortedData = formattedData.sort((a: { compositeScore: number; }, b: { compositeScore: number; }) => b.compositeScore - a.compositeScore);
+    const sortedData = formattedData.sort(
+      (a: { compositeScore: number }, b: { compositeScore: number }) =>
+        b.compositeScore - a.compositeScore
+    );
 
     setArticles(sortedData);
     setFilteredArticles(sortedData);
     setTotalPages(Math.ceil(sortedData.length / ITEMS_PER_PAGE));
     computeTopArticles(sortedData, filters.category);
     setIsLoaded(true);
-      setShowSpinner(false);
-      setTimeout(() => {
-        setShowContent(true);
-      }, 500);
+    setShowSpinner(false);
+    setTimeout(() => {
+      setShowContent(true);
+    }, 500);
   }, [filters.category]);
 
   useEffect(() => {
@@ -162,7 +164,7 @@ const Home: React.FC = () => {
     }
 
     const response = await axios.get(
-      `https://flare-api-6431634f8010.herokuapp.com/search?query=${query}`
+      `${API_CONFIG.BASE_URL}/search?query=${query}`
     );
     const formattedData = response.data.map((article: any) => {
       const score = article._score;
@@ -223,8 +225,7 @@ const Home: React.FC = () => {
     // Apply category filter
     if (updatedFilters.category && updatedFilters.category === "Breaking") {
       filtered = topArticles;
-    }
-    else if (updatedFilters.category && updatedFilters.category !== "All") {
+    } else if (updatedFilters.category && updatedFilters.category !== "All") {
       filtered = filtered.filter((article) =>
         article.categories.some((cat) =>
           cat.label.includes(updatedFilters.category)
@@ -330,7 +331,11 @@ const Home: React.FC = () => {
     <div>
       <div className="mx-auto p-4 items-center">
         <Header />
-        {showSpinner && <div className={`spinner ${isLoaded ? 'hidden' : 'visible'}`}><Spinner /></div>}
+        {showSpinner && (
+          <div className={`spinner ${isLoaded ? "hidden" : "visible"}`}>
+            <Spinner />
+          </div>
+        )}
         <div className={`fade-in ${isLoaded ? "show" : ""}`}>
           <Headlines
             articles={topArticles}

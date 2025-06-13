@@ -1,8 +1,8 @@
 import os
 from flask import Flask, request, jsonify
 from elasticsearch import Elasticsearch, helpers
-from .config import Config
-from .services import *
+from config import Config
+from services import *
 from flask_cors import CORS
 from datetime import datetime
 import logging
@@ -14,10 +14,9 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s %(levelname)s: %(message)s')
 
 try:
-    elasticsearch_password = os.getenv('ELASTIC_PW')
+    ELASTIC_URL = os.getenv("ELASTIC_URL", "http://localhost:9200")
     es = Elasticsearch(
-        os.getenv('FOUNDELASTICSEARCH_URL'),
-        basic_auth=('elastic', os.getenv('HEROKU_ES_PASSWORD')),
+        ELASTIC_URL
     )
 except Exception as e:
     logging.error(f"Error connecting to Elasticsearch: {e}")
@@ -110,7 +109,7 @@ def fetch_and_index_events():
                     "_source": event
                 }
                 bulk_actions.append(action)
-        
+
         # Perform bulk indexing
         if bulk_actions:
             helpers.bulk(es, bulk_actions)
@@ -149,6 +148,30 @@ def delete_index():
     except Exception as e:
         logging.error(f"Error deleting index: {e}")
         return jsonify({"error": "Failed to delete Elasticsearch index"}), 500
+
+
+@app.route('/export', methods=['GET'])
+def export_articles():
+    try:
+        result = es.search(index="events", body={
+            "query": {"match_all": {}},
+            "size": 1500  # Adjust if needed
+        }, scroll='2m')  # Use scroll for large data sets
+
+        all_hits = result['hits']['hits']
+        scroll_id = result['_scroll_id']
+
+        while len(result['hits']['hits']):
+            result = es.scroll(scroll_id=scroll_id, scroll='2m')
+            scroll_id = result['_scroll_id']
+            all_hits.extend(result['hits']['hits'])
+
+        articles = [hit["_source"] for hit in all_hits]
+
+        return jsonify(articles)
+    except Exception as e:
+        logging.error(f"Error exporting articles: {e}")
+        return jsonify({"error": "Failed to export articles"}), 500
 
 
 if __name__ == '__main__':

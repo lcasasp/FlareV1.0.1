@@ -48,4 +48,4 @@ COPY . .
 EXPOSE 5000
 
 # Run the application.
-CMD python ./src/app.py
+CMD python3 ./src/app.py

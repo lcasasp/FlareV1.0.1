@@ -1,0 +1,97 @@
+{
+    "mappings": {
+        "properties": {
+            "uri": {"type": "keyword"},
+            "totalArticleCount": {"type": "integer"},
+            "articleCounts": {
+                "properties": {
+                    "eng": {"type": "integer"}
+                }
+            },
+            "concepts": {
+                "properties": {
+                    "type": {"type": "keyword"},
+                    "label": {
+                        "properties": {
+                            "eng": {"type": "text"}
+                        }
+                    },
+                    "location": {
+                        "properties": {
+                            "country": {
+                                "properties": {
+                                    "label": {
+                                        "properties": {
+                                            "eng": {"type": "text"}
+                                        }
+                                    },
+                                    "lat": {"type": "float"},
+                                    "long": {"type": "float"}
+                                }
+                            },
+                            "label": {
+                                "properties": {
+                                    "eng": {"type": "text"}
+                                }
+                            },
+                            "lat": {"type": "float"},
+                            "long": {"type": "float"}
+                        }
+                    }
+                }
+            },
+            "categories": {
+                "properties": {
+                    "uri": {"type": "keyword"},
+                    "label": {"type": "text"}
+                }
+            },
+            "title": {
+                "properties": {
+                    "eng": {"type": "text"}
+                }
+            },
+            "summary": {
+                "properties": {
+                    "eng": {"type": "text"}
+                }
+            },
+            "eventDate": {"type": "date"},
+            "sentiment": {"type": "float"},
+            "socialScore": {"type": "float"},
+            "wgt": {"type": "integer"},
+            "images": {"type": "keyword"},
+            "location": {
+                "properties": {
+                    "country": {
+                        "properties": {
+                            "label": {
+                                "properties": {
+                                    "eng": {"type": "text"}
+                                }
+                            },
+                            "lat": {"type": "float"},
+                            "long": {"type": "float"}
+                        }
+                    },
+                    "label": {
+                        "properties": {
+                            "eng": {"type": "text"}
+                        }
+                    },
+                    "lat": {"type": "float"},
+                    "long": {"type": "float"}
+                }
+            },
+            "infoArticle": {
+                "properties": {
+                    "eng": {
+                        "properties": {
+                            "url": {"type": "keyword"}
+                        }
+                    }
+                }
+            }
+        }
+    }
+} 
