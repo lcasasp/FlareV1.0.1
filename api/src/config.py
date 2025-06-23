@@ -5,7 +5,7 @@ load_dotenv()
 
 
 class Config:
-    ER_APIKEY = os.getenv('ER_APIKEY')
+    ER_APIKEY = "ea5d1155-3e89-4abe-b936-ae5fb20253f9"
     NEWS_API_KEY = os.getenv('NEWS_API_KEY')
     ELASTIC_ENDPOINT = os.getenv('ELASTIC_ENDPOINT')
 

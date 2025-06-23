@@ -149,30 +149,5 @@ def delete_index():
         logging.error(f"Error deleting index: {e}")
         return jsonify({"error": "Failed to delete Elasticsearch index"}), 500
 
-
-@app.route('/export', methods=['GET'])
-def export_articles():
-    try:
-        result = es.search(index="events", body={
-            "query": {"match_all": {}},
-            "size": 1500  # Adjust if needed
-        }, scroll='2m')  # Use scroll for large data sets
-
-        all_hits = result['hits']['hits']
-        scroll_id = result['_scroll_id']
-
-        while len(result['hits']['hits']):
-            result = es.scroll(scroll_id=scroll_id, scroll='2m')
-            scroll_id = result['_scroll_id']
-            all_hits.extend(result['hits']['hits'])
-
-        articles = [hit["_source"] for hit in all_hits]
-
-        return jsonify(articles)
-    except Exception as e:
-        logging.error(f"Error exporting articles: {e}")
-        return jsonify({"error": "Failed to export articles"}), 500
-
-
 if __name__ == '__main__':
     app.run('0.0.0.0', port=5000, debug=True)

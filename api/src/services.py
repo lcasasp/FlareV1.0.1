@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 er = EventRegistry(apiKey=os.getenv(
     'ER_APIKEY'), allowUseOfArchive=False)
 
+
 def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     """
     Fetches events from EventRegistry API based on given categories and concepts.
@@ -81,10 +82,12 @@ def extract_and_prepare_event_data(event_response):
     processed_events = []
     for event in event_response:
         if 'concepts' in event:
-            filtered_concepts = [concept for concept in event['concepts'] if concept.get('score', 0) > 50]
+            filtered_concepts = [
+                concept for concept in event['concepts'] if concept.get('score', 0) > 50]
             event['concepts'] = filtered_concepts
         processed_events.append(event)
     return processed_events
+
 
 def build_search_query(query):
     search_body = {
@@ -120,64 +123,38 @@ def build_search_query(query):
                 "must": [
                     {
                         "function_score": {  # Custom scoring to boost recent articles
-                                "query": {
-                                    "range": {
+                            "query": {
+                                "range": {
+                                    "eventDate": {
+                                        "gte": "now-30d/d"
+                                    }
+                                }
+                            },
+                            "functions": [
+                                {
+                                    "gauss": {
                                         "eventDate": {
-                                            "gte": "now-30d/d"
+                                            "origin": "now",
+                                            "scale": "10d",
+                                            "offset": "2d",
+                                            "decay": 0.5
                                         }
                                     }
-                                },
-                                "functions": [
-                                    {
-                                        "gauss": {
-                                            "eventDate": {
-                                                "origin": "now",
-                                                "scale": "10d",
-                                                "offset": "2d",
-                                                "decay": 0.5
-                                            }
-                                        }
-                                    }
-                                ],
-                                "score_mode": "sum",
-                                "boost_mode": "multiply"
-                            }
+                                }
+                            ],
+                            "score_mode": "sum",
+                            "boost_mode": "multiply"
                         }
+                    }
                 ]
             },
-            
+
         },
         "size": 100
     }
 
     return search_body
 
-# def add_custom_scoring(search_body):
-#     """Adds custom scoring functions to the search query."""
-#     search_body["query"]["bool"].setdefault("must", []).append({
-#         "function_score": {
-#             "query": search_body["query"]["bool"]["must"][0], 
-#             "functions": [
-#                 {
-#                     "gauss": {
-#                         "eventDate": {
-#                             "origin": "now",
-#                             "scale": "15d", 
-#                             "decay": 0.3
-#                         }
-#                     }
-#                 },
-#                 {
-#                     "field_value_factor": {
-#                         "field": "socialScore",
-#                         "factor": 1.2,  # Slightly reduced impact
-#                         "modifier": "log1p"
-#                     }
-#                 }
-#             ],
-#             "boost_mode": "multiply"
-#         }
-#     })
 
 # Define Elasticsearch mapping
 event_mapping = {
