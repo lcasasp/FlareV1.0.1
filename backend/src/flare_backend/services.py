@@ -69,6 +69,13 @@ def fetch_events(categories=None, concepts=None, start_page=1, end_page=5):
     return all_events
 
 
+def _to_float(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+
 def extract_and_prepare_event_data(event_response):
     """
     Filters and prepares event data for indexing into Elasticsearch.
@@ -79,14 +86,20 @@ def extract_and_prepare_event_data(event_response):
     Returns:
         list: A list of unique and processed events ready for indexing.
     """
-    processed_events = []
-    for event in event_response:
-        if 'concepts' in event:
-            filtered_concepts = [
-                concept for concept in event['concepts'] if concept.get('score', 0) > 50]
-            event['concepts'] = filtered_concepts
-        processed_events.append(event)
-    return processed_events
+    processed = []
+    for ev in event_response:
+        if 'concepts' in ev:
+            ev['concepts'] = [c for c in ev['concepts']
+                              if c.get('score', 0) > 50]
+
+            for c in ev['concepts']:
+                loc = c.get('location') or {}
+                loc['lat'] = _to_float(loc.get('lat'))
+                loc['long'] = _to_float(loc.get('long'))
+                c['location'] = loc
+
+        processed.append(ev)
+    return processed
 
 
 def build_search_query(query):

@@ -64,4 +64,4 @@ compose.yaml
 !.elasticbeanstalk/*.cfg.yml
 !.elasticbeanstalk/*.global.yml
 
-.infra/cdk.out/
+cdk.out/

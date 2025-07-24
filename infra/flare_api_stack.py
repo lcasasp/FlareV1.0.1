@@ -101,6 +101,7 @@ class FlareApiStack(Stack):
             cors_preflight=apigw.CorsPreflightOptions(
                 allow_origins=[
                     "https://flare-news.com",
+                    "https://www.flare-news.com",
                     "https://flare-news.vercel.app",
                     "https://flare-ui-eta.vercel.app",
                     "http://localhost:3000",
