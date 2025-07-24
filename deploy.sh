@@ -32,19 +32,26 @@ echo "Using ECR repo: $REPO"
 echo "Using CDK stack: $STACK"
 
 # ---- AUTHENTICATE ----
-echo "Logging in to AWS SSO for profile $PROFILE..."
-aws sso login --profile $PROFILE
+echo "Checking AWS SSO session for profile $PROFILE..."
+if ! aws sts get-caller-identity --profile $PROFILE > /dev/null 2>&1; then
+  echo "No valid SSO session found. Logging in..."
+  aws sso login --profile $PROFILE
+else
+  echo "SSO session is valid."
+fi
 
 echo "Logging in to ECR..."
 aws ecr get-login-password --region us-east-1 --profile $PROFILE | docker login --username AWS --password-stdin $REPO
 
 # ---- BUILD & PUSH ----
 echo "Building Docker image..."
-docker build -t $REPO:latest -f $DOCKERFILE $BUILD_CONTEXT
-docker push $REPO:latest
+NEW_TAG="build-$(date +%s)"
+docker build -t $REPO:$NEW_TAG -f $DOCKERFILE $BUILD_CONTEXT
+docker push $REPO:$NEW_TAG
 
 # ---- DEPLOY ----
 echo "Deploying CDK stack..."
+export IMAGE_TAG="$NEW_TAG"
 cd infra
 cdk deploy $STACK --require-approval never --profile $PROFILE
 cd ..

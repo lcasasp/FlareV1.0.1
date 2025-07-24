@@ -1,49 +1,37 @@
-from opensearchpy import OpenSearch, RequestsHttpConnection
-from requests_aws4auth import AWS4Auth
-from elasticsearch import Elasticsearch
-import boto3
 import os
 import logging
+import boto3
+from requests_aws4auth import AWS4Auth
+from opensearchpy import OpenSearch
+from opensearchpy import RequestsHttpConnection
+from elasticsearch import Elasticsearch
 from .config import Settings
 
-region = os.environ.get("AWS_REGION", "us-east-1")
 log = logging.getLogger(__name__)
+region = os.getenv("AWS_REGION", "us-east-1")
 
 
 def get_client():
-    """
-    Returns an Elasticsearch client for local, or OpenSearch client with AWS SigV4 for Lambda/remote.
-    Logs which client is being used and AWS identity if possible.
-    """
+    # ─── local dev (Docker) ────────────────────────────────
     if Settings.LOCAL:
-        log.info("[OpenSearch] Using local Elasticsearch client (no AWS auth)")
-        # Local: use regular Elasticsearch client (no auth, no SSL)
-        return Elasticsearch(Settings.OPENSEARCH_ENDPOINT, verify_certs=False)
-    else:
-        # Lambda/remote: use OpenSearch client with AWS SigV4
-        session = boto3.Session()
-        creds = session.get_credentials()
-        if creds is None:
-            raise RuntimeError(
-                "No AWS credentials found inside Lambda container")
+        log.info("[OS] Local Elasticsearch client")
+        return Elasticsearch(Settings.OPENSEARCH_ENDPOINT, verify_certs=False, request_timeout=30)
 
-        creds = creds.get_frozen_credentials()
+    # ─── Lambda / prod (OpenSearch + SigV4) ────────────────
+    creds = boto3.Session().get_credentials().get_frozen_credentials()
+    auth = AWS4Auth(creds.access_key, creds.secret_key,
+                    region, "es", session_token=creds.token)
 
-        awsauth = AWS4Auth(
-            creds.access_key,
-            creds.secret_key,
-            region,
-            "es",
-            session_token=creds.token,
-        )
-
-        return OpenSearch(
-            Settings.OPENSEARCH_ENDPOINT,
-            http_auth=awsauth,
-            use_ssl=True,
-            verify_certs=True,
-            connection_class=RequestsHttpConnection
-        )
+    log.info("[OS] OpenSearch client with SigV4")
+    return OpenSearch(
+        Settings.OPENSEARCH_ENDPOINT,
+        http_auth=auth,
+        verify_certs=True,
+        connection_class=RequestsHttpConnection,
+        timeout=30,
+        max_retries=3,
+        retry_on_timeout=True,
+    )
 
 
 es = get_client()

@@ -11,6 +11,4 @@ COPY src/ ${LAMBDA_TASK_ROOT}/
 
 RUN ls -lR ${LAMBDA_TASK_ROOT}
 
-# 4) Set the handler (module.func)
-CMD ["flare_backend.lambda_handler.lambda_handler"]
     

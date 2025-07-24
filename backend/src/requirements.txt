@@ -4,6 +4,5 @@ elasticsearch==8.13.*      # same client for local & OpenSearch
 python-dotenv==1.0.*
 boto3==1.34.*               # Lambda in VPC needs it anyway
 eventregistry==9.1
-requests
-opensearch-py
-requests-aws4auth
+opensearch-py==2.5.*
+requests-aws4auth==1.*

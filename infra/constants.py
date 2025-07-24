@@ -1,3 +1,4 @@
+import os
 from aws_cdk import aws_ecr as ecr
 
 DEV = dict(
@@ -10,4 +11,12 @@ PROD = dict(
 )
 
 ECR_REPO_NAME = "flare-backend"
-IMAGE_TAG = "latest"
+
+IMAGE_TAG = os.getenv("IMAGE_TAG", "latest")
+
+INGEST_QUERIES = {
+    "dev":  "",
+    "prod": """
+concepts=http://en.wikipedia.org/wiki/Climate_change&pages=1-10
+"""
+}
