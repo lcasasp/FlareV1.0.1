@@ -4,7 +4,7 @@ export const API_CONFIG = {
   BASE_URL: isDevelopment
     ? "http://localhost:5000" // Local development
     : process.env.NEXT_PUBLIC_API_URL ||
-      "https://5m5ubtmwui.execute-api.us-east-1.amazonaws.com/", // Production or custom URL
+      "https://5m5ubtmwui.execute-api.us-east-1.amazonaws.com", // Production or custom URL
   ENDPOINTS: {
     ARTICLES: "/articles",
     SEARCH: "/search",
