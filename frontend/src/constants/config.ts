@@ -3,7 +3,8 @@ const isDevelopment = process.env.NODE_ENV === "development";
 export const API_CONFIG = {
   BASE_URL: isDevelopment
     ? "http://localhost:5000" // Local development
-    : process.env.NEXT_PUBLIC_API_URL || "", // Production or custom URL
+    : process.env.NEXT_PUBLIC_API_URL ||
+      "https://tnfjqgs05g.execute-api.us-east-1.amazonaws.com/", // Production or custom URL
   ENDPOINTS: {
     ARTICLES: "/articles",
     SEARCH: "/search",

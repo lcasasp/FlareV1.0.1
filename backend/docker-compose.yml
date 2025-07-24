@@ -1,0 +1,23 @@
+services:
+  es:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    ports:
+      - "9200:9200"
+  api:
+    build:
+      context: ./src
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src:/app
+    environment:
+      - LOCAL=1
+      - OPENSEARCH_ENDPOINT=http://es:9200
+      - ER_APIKEY=${ER_APIKEY}
+    ports:
+      - "5000:5000"
+    depends_on:
+      - es
