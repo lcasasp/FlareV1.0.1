@@ -9,52 +9,17 @@ import Headlines from "@/components/headlines";
 import Footer from "@/components/footer";
 import Spinner from "@/components/spinner";
 import { API_CONFIG } from "@/constants/config";
+import type { FlareArticle } from "@/types/flare";
+import { formatArticleFromSource } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 10;
 
-interface Article {
-  title: string;
-  summary: string;
-  sentiment: number;
-  image: string;
-  eventDate: string;
-  socialScore: number;
-  wgt: number;
-  categories: {
-    label: string;
-    wgt: number;
-  }[];
-  concepts: {
-    label: {
-      eng: string;
-    };
-    type: string;
-  }[];
-  mainLocation: {
-    label: string;
-    latitude: number;
-    longitude: number;
-  };
-  locations: {
-    label: string;
-    latitude: number;
-    longitude: number;
-  }[];
-  infoArticle: {
-    eng: {
-      url: string;
-    };
-  };
-  compositeScore: number;
-  totalArticleCount: number;
-}
-
 const Home: React.FC = () => {
-  const [articles, setArticles] = useState<Article[]>([]);
-  const [filteredArticles, setFilteredArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<FlareArticle[]>([]);
+  const [filteredArticles, setFilteredArticles] = useState<FlareArticle[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [topArticles, setTopArticles] = useState<Article[]>([]);
+  const [topArticles, setTopArticles] = useState<FlareArticle[]>([]);
   const [filters, setFilters] = useState<{
     location: string;
     concept: string;
@@ -69,46 +34,7 @@ const Home: React.FC = () => {
 
   const fetchArticles = useCallback(async () => {
     const response = await axios.get(`${API_CONFIG.BASE_URL}/articles`);
-    const formattedData = response.data.map((article: any) => {
-      const title = article.title.eng;
-      const summary = article.summary.eng;
-      const image = article.images[0];
-
-      const mainLocation =
-        article.location && article.location.lat && article.location.long
-          ? {
-              label: article.location.label.eng,
-              latitude: article.location.lat,
-              longitude: article.location.long,
-            }
-          : undefined;
-
-      const locations = article.concepts
-        .filter((c: any) => c.type === "loc" && c.score > 60)
-        .map((loc: any) => {
-          const latitude =
-            loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude =
-            loc.location && loc.location.long ? loc.location.long : 0;
-          return {
-            label: loc.label.eng,
-            latitude,
-            longitude,
-          };
-        });
-
-      const compositeScore = article.wgt;
-
-      return {
-        ...article,
-        title,
-        image,
-        summary,
-        mainLocation,
-        locations,
-        compositeScore,
-      };
-    });
+    const formattedData = response.data.map(formatArticleFromSource);
 
     const sortedData = formattedData.sort(
       (a: { compositeScore: number }, b: { compositeScore: number }) =>
@@ -130,7 +56,7 @@ const Home: React.FC = () => {
     fetchArticles();
   }, []);
 
-  const computeTopArticles = (articles: Article[], category: string) => {
+  const computeTopArticles = (articles: FlareArticle[], category: string) => {
     let filteredArticles = articles;
 
     if (category !== "All" && category !== "Breaking") {
@@ -166,57 +92,14 @@ const Home: React.FC = () => {
     const response = await axios.get(
       `${API_CONFIG.BASE_URL}/${API_CONFIG.ENDPOINTS.SEARCH}?query=${query}`
     );
-    const formattedData = response.data.map((article: any) => {
-      const score = article._score;
-      const title = article._source.title.eng;
-      const summary = article._source.summary.eng;
-      const image = article._source.images[0];
-
-      const mainLocation =
-        article._source.location &&
-        article._source.location.lat &&
-        article._source.location.long
-          ? {
-              label: article._source.location.label.eng,
-              latitude: article._source.location.lat,
-              longitude: article._source.location.long,
-            }
-          : undefined;
-
-      const locations = article._source.concepts
-        .filter((c: any) => c.type === "loc" && c.score > 60)
-        .map((loc: any) => {
-          const latitude =
-            loc.location && loc.location.lat ? loc.location.lat : 0;
-          const longitude =
-            loc.location && loc.location.long ? loc.location.long : 0;
-          return {
-            label: loc.label.eng,
-            latitude,
-            longitude,
-          };
-        });
-
-      const compositeScore =
-        0.2 * article._source.totalArticleCount +
-        0.2 * article._source.wgt +
-        0.6 * score;
-
-      return {
-        ...article._source,
-        title,
-        image,
-        summary,
-        mainLocation,
-        locations,
-        compositeScore,
-      };
-    });
-
+    const formattedData = response.data.map(formatArticleFromSource);
     handleFilterChange(updatedFilters, formattedData);
   };
 
-  const handleFilterChange = (newFilters: any, data: Article[] = articles) => {
+  const handleFilterChange = (
+    newFilters: any,
+    data: FlareArticle[] = articles
+  ) => {
     const updatedFilters = { ...filters, ...newFilters };
     setFilters(updatedFilters);
 

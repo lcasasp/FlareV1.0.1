@@ -1,42 +1,9 @@
 import React, { useRef } from "react";
 import useMousePosition from "../hooks/useMousePosition";
+import type { FlareArticle } from "@/types/flare";
 
 interface ArticleProps {
-  article: {
-    title: string;
-    summary: string;
-    sentiment: number;
-    image: string;
-    eventDate: string;
-    socialScore: number;
-    wgt: number;
-    categories: {
-      label: string;
-      wgt: number;
-    }[];
-    concepts: {
-      label: {
-        eng: string;
-      };
-      type: string;
-    }[];
-    mainLocation: {
-      label: string;
-      latitude: number;
-      longitude: number;
-    };
-    locations: {
-      label: string;
-      latitude: number;
-      longitude: number;
-    }[];
-    infoArticle: {
-      eng: {
-        url: string;
-      };
-    };
-    totalArticleCount: number;
-  };
+  article: FlareArticle;
 }
 
 const getSentimentColor = (sentiment: number) => {
@@ -47,24 +14,16 @@ const getSentimentColor = (sentiment: number) => {
 };
 
 const getSentimentLabel = (sentiment: number) => {
-  if (sentiment <= -0.5) {
-    return "Very Negative";
-  } else if (sentiment <= -0.25) {
-    return "Negative";
-  } else if (sentiment <= -0.15) {
-    return "Slightly Negative";
-  } else if (sentiment < 0.15) {
-    return "Neutral";
-  } else if (sentiment < 0.25) {
-    return "Slightly Positive";
-  } else if (sentiment < 0.5) {
-    return "Positive";
-  } else {
-    return "Very Positive";
-  }
+  if (sentiment <= -0.5) return "Very Negative";
+  if (sentiment <= -0.25) return "Negative";
+  if (sentiment <= -0.15) return "Slightly Negative";
+  if (sentiment < 0.15) return "Neutral";
+  if (sentiment < 0.25) return "Slightly Positive";
+  if (sentiment < 0.5) return "Positive";
+  return "Very Positive";
 };
 
-const Article: React.FC<ArticleProps> = ({ article }) => {
+const ArticleCard: React.FC<ArticleProps> = ({ article }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   const { x, y, rotateX, rotateY } = useMousePosition(cardRef);
   const sentimentLabel = getSentimentLabel(article.sentiment);
@@ -86,31 +45,43 @@ const Article: React.FC<ArticleProps> = ({ article }) => {
       <h3 className="article-title text-xl font-semibold mb-2 w-full">
         {article.title}
       </h3>
-      <p className="text-gray-600 text-sm mb-2">{article.eventDate}</p>
+
+      <p className="text-gray-600 text-sm mb-2">
+        {article.eventDate || "Unknown date"}
+      </p>
+
       <h3 className="text-sm mb-2">
         <span style={{ fontWeight: "bold", color: "#064273" }}>Sentiment:</span>{" "}
         <span style={{ fontWeight: "bold", color: sentimentColor }}>
           {sentimentLabel} ({article.sentiment.toFixed(2)})
         </span>
       </h3>
+
       {article.image && (
         <img
           src={article.image}
           alt="Article"
           className="article-image float-left mr-4 mb-4"
+          loading="lazy"
         />
       )}
-      <p className="text-gray-600">{article.summary + "..."}</p>
-      <a
-        href={article.infoArticle.eng.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-500"
-      >
-        Read more
-      </a>
+
+      <p className="text-gray-600">
+        {article.summary ? `${article.summary}...` : ""}
+      </p>
+
+      {article.infoArticle?.eng?.url && (
+        <a
+          href={article.infoArticle.eng.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500"
+        >
+          Read more
+        </a>
+      )}
     </div>
   );
 };
 
-export default Article;
+export default ArticleCard;

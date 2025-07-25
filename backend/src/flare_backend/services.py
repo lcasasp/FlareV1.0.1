@@ -103,7 +103,7 @@ def extract_and_prepare_event_data(event_response):
 
 
 def build_search_query(query):
-    search_body = {
+    return {
         "query": {
             "bool": {
                 "must": [
@@ -118,29 +118,12 @@ def build_search_query(query):
                             "type": "most_fields",
                             "fuzziness": "AUTO"
                         }
-                    }
-                ],
-                "should": [
+                    },
                     {
-                        "multi_match": {
-                            "query": query,
-                            "fields": [
-                                "concepts.label.eng^2",
-                                "summary.eng^1"
-                            ],
-                            "type": "phrase",
-                            "boost": 2
-                        }
-                    }
-                ],
-                "must": [
-                    {
-                        "function_score": {  # Custom scoring to boost recent articles
+                        "function_score": {
                             "query": {
                                 "range": {
-                                    "eventDate": {
-                                        "gte": "now-30d/d"
-                                    }
+                                    "eventDate": {"gte": "now-30d/d"}
                                 }
                             },
                             "functions": [
@@ -159,14 +142,24 @@ def build_search_query(query):
                             "boost_mode": "multiply"
                         }
                     }
+                ],
+                "should": [
+                    {
+                        "multi_match": {
+                            "query": query,
+                            "fields": [
+                                "concepts.label.eng^2",
+                                "summary.eng^1"
+                            ],
+                            "type": "phrase",
+                            "boost": 2
+                        }
+                    }
                 ]
-            },
-
+            }
         },
         "size": 100
     }
-
-    return search_body
 
 
 # Define Elasticsearch mapping

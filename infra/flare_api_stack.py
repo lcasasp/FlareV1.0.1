@@ -86,11 +86,11 @@ class FlareApiStack(Stack):
         ingest_fn = docker_fn(
             "IngestFn", 60, "flare_backend.handler_ingest.lambda_handler")
 
-        # ───────────────────────────────────────── 5. Schedule ingest (05:00 UTC)
+        # ───────────────────────────────────────── 5. Schedule ingest (06:00 UTC)
         if stage == "prod":
             events.Rule(
                 self, "DailyIngest",
-                schedule=events.Schedule.cron(hour="2", minute="0"),
+                schedule=events.Schedule.cron(hour="6", minute="0"),
                 targets=[targets.LambdaFunction(ingest_fn)],
             )
 

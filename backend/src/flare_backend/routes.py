@@ -11,11 +11,33 @@ import logging
 
 log = logging.getLogger(__name__)
 
+FIELDS = [
+    "uri",
+    "title.eng",
+    "summary.eng",
+    "images",
+    "eventDate",
+    "sentiment",
+    "socialScore",
+    "wgt",
+    "totalArticleCount",
+    "concepts.label.eng",
+    "concepts.type",
+    "concepts.location.lat",
+    "concepts.location.long",
+    "concepts.score",
+    "location.label.eng",
+    "location.lat",
+    "location.long",
+    "infoArticle.eng.url"
+]
+
 # ---------- Shared handlers ---------- #
 
 
 def handle_get_articles():
     result = es.search(index="events", body={
+        "_source": FIELDS,
         "query": {"match_all": {}},
         "sort": [{"socialScore": {"order": "desc"}}],
         "size": 1000
@@ -25,8 +47,9 @@ def handle_get_articles():
 
 def handle_search_events(query: str):
     search_body = build_search_query(query)
+    search_body["_source"] = FIELDS
     result = es.search(index="events", body=search_body)
-    return result["hits"]["hits"]
+    return [hit["_source"] for hit in result["hits"]["hits"]]
 
 
 def handle_fetch_and_index(pages, categories, concepts):
