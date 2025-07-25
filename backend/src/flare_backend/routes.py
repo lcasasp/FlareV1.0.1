@@ -21,6 +21,8 @@ FIELDS = [
     "socialScore",
     "wgt",
     "totalArticleCount",
+    "categories.label",
+    "categories.wgt",
     "concepts.label.eng",
     "concepts.type",
     "concepts.location.lat",
