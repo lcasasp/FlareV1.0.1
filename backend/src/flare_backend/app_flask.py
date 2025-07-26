@@ -18,7 +18,16 @@ logging.basicConfig(level=logging.DEBUG)
 
 @app.route("/articles")
 def articles():
-    return jsonify(handle_get_articles())
+    limit = request.args.get("limit")
+    after = request.args.get("after")
+
+    # Prefer the new signature; fall back if routes.py hasn't been updated yet
+    try:
+        data = handle_get_articles(limit=limit, after=after)
+    except TypeError:
+        data = handle_get_articles()
+
+    return jsonify(data)
 
 
 @app.route("/search")

@@ -7,6 +7,8 @@ from .services import (
     event_mapping,
 )
 from opensearchpy.helpers import bulk
+import base64
+import json
 import logging
 
 log = logging.getLogger(__name__)
@@ -37,14 +39,83 @@ FIELDS = [
 # ---------- Shared handlers ---------- #
 
 
-def handle_get_articles():
-    result = es.search(index="events", body={
+def _encode_cursor(sort_values) -> str:
+    try:
+        return base64.urlsafe_b64encode(
+            json.dumps(sort_values).encode("utf-8")
+        ).decode("ascii")
+    except Exception:
+        return ""
+
+
+def _decode_cursor(token: str):
+    return json.loads(
+        base64.urlsafe_b64decode(token.encode("ascii")).decode("utf-8")
+    )
+
+
+def handle_get_articles(limit=None, after=None):
+    """
+    When `limit` is not provided -> legacy behavior (return array of top 1000).
+    When `limit` is provided -> return { items: [...], next: <cursor or null> }.
+    Cursor encodes the OpenSearch `sort` values via base64(JSON).
+    """
+    # If called from Flask without explicit args, read from request.args
+    if limit is None:
+        try:
+            limit = request.args.get("limit")
+            after = request.args.get("after")
+        except Exception:
+            pass
+
+    # ----- Legacy behavior: no limit -> return array of top 1000 -----
+    if not limit:
+        result = es.search(index="events", body={
+            "_source": FIELDS,
+            "query": {"match_all": {}},
+            "sort": [
+                {"socialScore": {"order": "desc"}},
+                {"uri": {"order": "asc"}},  # stable tie-breaker
+            ],
+            "size": 1000
+        })
+        return [hit["_source"] for hit in result["hits"]["hits"]]
+
+    # ----- Cursor mode -----
+    limit_i = max(1, min(int(limit), 1000))
+    body = {
         "_source": FIELDS,
         "query": {"match_all": {}},
-        "sort": [{"socialScore": {"order": "desc"}}],
-        "size": 1000
-    })
-    return [hit["_source"] for hit in result["hits"]["hits"]]
+        "sort": [
+            {"socialScore": {"order": "desc"}},
+            {"uri": {"order": "asc"}},
+        ],
+        "size": limit_i,
+    }
+
+    if after:
+        try:
+            decoded = json.loads(
+                base64.urlsafe_b64decode(after.encode("ascii")).decode("utf-8")
+            )
+            body["search_after"] = decoded
+        except Exception:
+            # bad cursor -> ignore and start from beginning
+            pass
+
+    result = es.search(index="events", body=body)
+    hits = result["hits"]["hits"]
+
+    next_token = None
+    if len(hits) == limit_i:
+        sort_values = hits[-1].get("sort")
+        if sort_values is not None:
+            next_token = base64.urlsafe_b64encode(
+                json.dumps(sort_values).encode("utf-8")
+            ).decode("ascii")
+
+    items = [h["_source"] for h in hits]
+    return {"items": items, "next": next_token}
 
 
 def handle_search_events(query: str):

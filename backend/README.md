@@ -27,11 +27,11 @@ backend/
 
 ## 2. Environment variables
 
-| Name | Purpose | Default (local) |
-|------|---------|-----------------|
-| `STAGE` | `local`, `dev`, `prod` | `local` |
-| `OPENSEARCH_ENDPOINT` | HTTP(S) URL to OpenSearch/Elasticsearch | `http://localhost:9200` |
-| `ER_APIKEY` / `NEWS_API_KEY` | External data APIs | — |
+| Name                         | Purpose                                 | Default (local)         |
+| ---------------------------- | --------------------------------------- | ----------------------- |
+| `STAGE`                      | `local`, `dev`, `prod`                  | `local`                 |
+| `OPENSEARCH_ENDPOINT`        | HTTP(S) URL to OpenSearch/Elasticsearch | `http://localhost:9200` |
+| `ER_APIKEY` / `NEWS_API_KEY` | External data APIs                      | —                       |
 
 Use `.env` file for local secrets.  
 Docker Compose automatically loads it.
@@ -45,3 +45,9 @@ cd backend
 docker compose up --build
 ```
 
+or
+
+```
+cd ./backend/src
+python3 -m flare_backend.app_flask
+```

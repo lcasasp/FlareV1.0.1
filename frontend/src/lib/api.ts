@@ -49,21 +49,57 @@ export const formatArticleFromSource = (src: any): FlareArticle => {
   };
 };
 
+export type ArticlesChunk = { items: FlareArticle[]; next: string | null };
+
+export async function fetchArticlesChunk(
+  params: { limit?: number; after?: string } = {}
+): Promise<ArticlesChunk> {
+  const { limit = 100, after } = params;
+  const url = `${API_CONFIG.BASE_URL}/${
+    API_CONFIG.ENDPOINTS.ARTICLES
+  }?limit=${limit}${after ? `&after=${encodeURIComponent(after)}` : ""}`;
+
+  const res = await axios.get(url, {
+    validateStatus: (s) => s >= 200 && s < 300,
+  });
+
+  // Support both legacy (array) and new ({items,next}) for safety
+  const payload = res.data;
+  const rawItems = Array.isArray(payload) ? payload : payload.items;
+  const items: FlareArticle[] = rawItems.map((src: any) =>
+    formatArticleFromSource(src)
+  );
+  const next: string | null = Array.isArray(payload)
+    ? null
+    : payload.next ?? null;
+
+  return { items, next };
+}
+
 // ---- API wrappers ----------------------------------------------------------
 
-export async function fetchArticles(): Promise<FlareArticle[]> {
-  const res = await axios.get(
-    `${API_CONFIG.BASE_URL}/${API_CONFIG.ENDPOINTS.ARTICLES}`,
-    {
-      validateStatus: (s) => s >= 200 && s < 300,
-    }
-  );
+/**
+ * Backwards-compatible helper that returns up to `max` (default 1000)
+ * and internally uses the chunked endpoint if available.
+ */
+export async function fetchArticles(max = 1000): Promise<FlareArticle[]> {
+  const out: FlareArticle[] = [];
+  let cursor: string | null = null;
 
-  if (res.headers["content-encoding"] === "gzip") {
-    console.debug("Articles response gzipped ✅");
+  const first = await fetchArticlesChunk({ limit: Math.min(200, max) });
+  out.push(...first.items);
+  cursor = first.next;
+
+  while (cursor && out.length < max) {
+    const chunk = await fetchArticlesChunk({
+      limit: Math.min(200, max - out.length),
+      after: cursor,
+    });
+    out.push(...chunk.items);
+    cursor = chunk.next;
   }
 
-  return res.data.map((src: any) => formatArticleFromSource(src));
+  return out;
 }
 
 export async function searchArticles(query: string): Promise<FlareArticle[]> {

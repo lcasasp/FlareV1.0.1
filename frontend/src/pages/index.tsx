@@ -10,9 +10,12 @@ import Footer from "@/components/footer";
 import Spinner from "@/components/spinner";
 import { API_CONFIG } from "@/constants/config";
 import type { FlareArticle } from "@/types/flare";
-import { formatArticleFromSource } from "@/lib/api";
+import { formatArticleFromSource, fetchArticlesChunk } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 10;
+const INITIAL_LIMIT = 100;
+const BATCH_LIMIT = 200;
+const MAX_INITIAL = 1000;
 
 const Home: React.FC = () => {
   const [articles, setArticles] = useState<FlareArticle[]>([]);
@@ -31,30 +34,6 @@ const Home: React.FC = () => {
   const [showContent, setShowContent] = useState(false);
 
   const { category } = filters;
-
-  const fetchArticles = useCallback(async () => {
-    const response = await axios.get(`${API_CONFIG.BASE_URL}/articles`);
-    const formattedData = response.data.map(formatArticleFromSource);
-
-    const sortedData = formattedData.sort(
-      (a: { compositeScore: number }, b: { compositeScore: number }) =>
-        b.compositeScore - a.compositeScore
-    );
-
-    setArticles(sortedData);
-    setFilteredArticles(sortedData);
-    setTotalPages(Math.ceil(sortedData.length / ITEMS_PER_PAGE));
-    computeTopArticles(sortedData, filters.category);
-    setIsLoaded(true);
-    setShowSpinner(false);
-    setTimeout(() => {
-      setShowContent(true);
-    }, 500);
-  }, [filters.category]);
-
-  useEffect(() => {
-    fetchArticles();
-  }, []);
 
   const computeTopArticles = (articles: FlareArticle[], category: string) => {
     let filteredArticles = articles;
@@ -209,6 +188,49 @@ const Home: React.FC = () => {
       ),
     ])
   );
+
+  const fetchArticles = useCallback(async () => {
+    // 1) Initial fast chunk
+    const first = await fetchArticlesChunk({ limit: INITIAL_LIMIT });
+    let accumulated = [...first.items].sort(
+      (a, b) => b.compositeScore - a.compositeScore
+    );
+
+    setArticles(accumulated);
+    setFilteredArticles(accumulated);
+    setTotalPages(Math.ceil(accumulated.length / ITEMS_PER_PAGE));
+    computeTopArticles(accumulated, filters.category);
+    setIsLoaded(true);
+    setShowSpinner(false);
+    setTimeout(() => setShowContent(true), 300);
+
+    // 2) Background stream up to MAX_INITIAL
+    let cursor = first.next;
+    let total = accumulated.length;
+
+    while (cursor && total < MAX_INITIAL) {
+      const { items, next } = await fetchArticlesChunk({
+        limit: Math.min(BATCH_LIMIT, MAX_INITIAL - total),
+        after: cursor,
+      });
+
+      accumulated = [...accumulated, ...items].sort(
+        (a, b) => b.compositeScore - a.compositeScore
+      );
+
+      setArticles(accumulated);
+      // Re-apply current filters on the growing dataset
+      handleFilterChange(filters, accumulated);
+      computeTopArticles(accumulated, filters.category);
+
+      total += items.length;
+      cursor = next;
+    }
+  }, [filters, computeTopArticles, handleFilterChange]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, []);
 
   return (
     <div>
