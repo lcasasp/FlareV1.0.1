@@ -8,13 +8,27 @@ import {
   createClouds,
   createGlow,
 } from "./materials";
+import type { FlareArticle } from "@/types/flare";
 
-const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
+const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
+
+  const sceneRef = useRef<THREE.Scene | null>(null);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
+
+  const earthGroupRef = useRef<THREE.Group | null>(null);
+  const lightsRef = useRef<THREE.Object3D | null>(null);
+  const cloudsRef = useRef<THREE.Object3D | null>(null);
+  const glowRef = useRef<THREE.Object3D | null>(null);
+
   const markerRefs = useRef<THREE.Mesh[]>([]);
   const rotationSpeedRef = useRef(0.0004);
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
+  const animationIdRef = useRef<number | null>(null);
+
   const [hoveredInfo, setHoveredInfo] = useState<{
     title: string;
     image: string;
@@ -28,25 +42,26 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     return "ontouchstart" in window || navigator.maxTouchPoints > 0;
   };
 
+  // --- One-time scene setup (renderer, camera, controls, initial earth) ---
   useEffect(() => {
-    // Clean up previous markers
-    markerRefs.current.forEach((marker) => marker.parent?.remove(marker));
-    markerRefs.current = [];
-    setHoveredInfo(null);
     const currentMount = mountRef.current;
+    if (!currentMount) return;
 
-    // Set up scene
-    const w = currentMount?.clientWidth || window.innerWidth;
-    const h = currentMount?.clientHeight || window.innerHeight;
+    // Scene
     const scene = new THREE.Scene();
+    sceneRef.current = scene;
+
+    // Camera
+    const w = currentMount.clientWidth || window.innerWidth;
+    const h = currentMount.clientHeight || window.innerHeight;
     const camera = new THREE.PerspectiveCamera(70, w / h, 0.1, 1000);
+    cameraRef.current = camera;
 
     const initializeCamera = () => {
       camera.position.set(0, 0, 3);
       camera.lookAt(new THREE.Vector3(0, 0, 0));
     };
 
-    // Adjust camera position based on screen width for responsiveness
     const updateCameraPosition = () => {
       const width = window.innerWidth;
       if (width < 450) {
@@ -59,56 +74,69 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       camera.updateProjectionMatrix();
     };
 
-    // Initial camera setup
     initializeCamera();
     updateCameraPosition();
 
-    // Set up renderer
+    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setClearColor(0x000000, 0);
     renderer.setSize(w, h);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace;
-    if (currentMount) {
-      currentMount.appendChild(renderer.domElement);
-    }
+    currentMount.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    // Set up controls
+    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
-    controls.enableZoom = false; // Disable zoom initially
+    controls.enableZoom = false;
     controls.enablePan = false;
-
     controls.maxDistance = 5;
     controls.minDistance = 1.3;
     controls.update();
+    controlsRef.current = controls;
 
-    // Create Earth and related objects
+    // Initial Earth group (from current articles; ok if empty)
     const earthGroup = createEarthGroup(articles, markerRefs, gsap);
     earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
+    earthGroupRef.current = earthGroup;
     scene.add(earthGroup);
 
+    // Reusable child layers (stay the same across updates)
     const lightsMesh = createLights();
+    lightsRef.current = lightsMesh;
     earthGroup.add(lightsMesh);
 
     const cloudsMesh = createClouds();
+    cloudsRef.current = cloudsMesh;
     earthGroup.add(cloudsMesh);
 
     const glowMesh = createGlow();
+    glowRef.current = glowMesh;
     earthGroup.add(glowMesh);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.25);
     scene.add(ambientLight);
 
-    // Animation loop
+    // Animation loop (uses refs so it survives prop/state updates)
     const animate = () => {
-      requestAnimationFrame(animate);
+      animationIdRef.current = requestAnimationFrame(animate);
+
+      const sceneLocal = sceneRef.current;
+      const cameraLocal = cameraRef.current;
+      const rendererLocal = rendererRef.current;
+      const earthLocal = earthGroupRef.current;
+      const cloudsLocal = cloudsRef.current;
+
+      if (!sceneLocal || !cameraLocal || !rendererLocal || !earthLocal) return;
 
       if (!isTouchscreen()) {
         if (mouse.current.x && mouse.current.y) {
-          raycaster.current.setFromCamera(mouse.current, camera);
-          const allObjects = [earthGroup, ...markerRefs.current];
-          // Check for intersections visible to the camera
+          raycaster.current.setFromCamera(mouse.current, cameraLocal);
+          const allObjects: THREE.Object3D[] = [
+            earthLocal,
+            ...markerRefs.current,
+          ];
           const intersects = raycaster.current.intersectObjects(
             allObjects,
             true
@@ -125,7 +153,6 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
                   }
                 : null
             );
-
             isMouseOverGlobe.current = true;
             rotationSpeedRef.current = 0;
           } else {
@@ -136,21 +163,24 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
         }
       }
 
-      earthGroup.rotation.y += rotationSpeedRef.current;
-      cloudsMesh.rotation.y += rotationSpeedRef.current / 3;
+      earthLocal.rotation.y += rotationSpeedRef.current;
+      if (cloudsLocal) {
+        (cloudsLocal as any).rotation.y += rotationSpeedRef.current / 3;
+      }
 
-      renderer.render(scene, camera);
+      rendererLocal.render(sceneLocal, cameraLocal);
     };
-
     animate();
 
-    // Event handlers
+    // Event handlers (use refs)
     const handleMouseDown = () => {
       isDragging.current = false;
     };
 
     const handleMouseMove = (event: MouseEvent) => {
-      const bounds = renderer.domElement.getBoundingClientRect();
+      const rendererLocal = rendererRef.current;
+      if (!rendererLocal) return;
+      const bounds = rendererLocal.domElement.getBoundingClientRect();
       mouse.current.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
       mouse.current.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
       setInfoWindowPosition({
@@ -163,43 +193,47 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     };
 
     const handleMouseUp = () => {
-      if (!isDragging.current) {
-        raycaster.current.setFromCamera(mouse.current, camera);
-        const intersects = raycaster.current.intersectObjects(
-          markerRefs.current
-        );
-        if (intersects.length > 0 && intersects[0].object.visible) {
-          const intersectedMarker = intersects[0].object;
-          const url = intersectedMarker.userData.url;
-          if (url) {
-            window.open(url, "_blank");
-          }
-        }
+      const cameraLocal = cameraRef.current;
+      if (!cameraLocal) return;
+      raycaster.current.setFromCamera(mouse.current, cameraLocal);
+      const intersects = raycaster.current.intersectObjects(markerRefs.current);
+      if (intersects.length > 0 && intersects[0].object.visible) {
+        const intersectedMarker = intersects[0].object;
+        const url = intersectedMarker.userData.url;
+        if (url) window.open(url, "_blank");
       }
     };
 
     const handleTouchMove = (event: TouchEvent) => {
-      if (isTouchscreen() && event.touches.length === 2) {
-        controls.enableZoom = true;
+      const controlsLocal = controlsRef.current;
+      if (isTouchscreen() && event.touches.length === 2 && controlsLocal) {
+        controlsLocal.enableZoom = true;
         event.preventDefault();
       }
     };
 
-    const handleScroll = (event: WheelEvent) => {
+    const handleScroll = (_event: WheelEvent) => {
+      const controlsLocal = controlsRef.current;
+      if (!controlsLocal) return;
       if (isTouchscreen()) {
-        controls.enableZoom = true;
+        controlsLocal.enableZoom = true;
       } else {
-        controls.enableZoom = isMouseOverGlobe.current;
+        controlsLocal.enableZoom = isMouseOverGlobe.current;
       }
     };
 
     const handleWindowResize = () => {
-      const newWidth = currentMount?.clientWidth || window.innerWidth;
-      const newHeight = currentMount?.clientHeight || window.innerHeight;
-      camera.aspect = newWidth / newHeight;
+      const rendererLocal = rendererRef.current;
+      const cameraLocal = cameraRef.current;
+      const controlsLocal = controlsRef.current;
+      if (!rendererLocal || !cameraLocal || !controlsLocal) return;
+
+      const newWidth = currentMount.clientWidth || window.innerWidth;
+      const newHeight = currentMount.clientHeight || window.innerHeight;
+      cameraLocal.aspect = newWidth / newHeight;
       updateCameraPosition();
-      renderer.setSize(newWidth, newHeight);
-      controls.update()
+      rendererLocal.setSize(newWidth, newHeight);
+      controlsLocal.update();
     };
 
     if (isTouchscreen()) {
@@ -217,6 +251,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
     window.addEventListener("resize", handleWindowResize, false);
 
     return () => {
+      // Clean up only on unmount
       if (isTouchscreen()) {
         renderer.domElement.removeEventListener("touchmove", handleTouchMove);
       } else {
@@ -226,8 +261,70 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
       renderer.domElement.removeEventListener("mousemove", handleMouseMove);
       renderer.domElement.removeEventListener("mouseup", handleMouseUp);
       window.removeEventListener("resize", handleWindowResize);
-      currentMount?.removeChild(renderer.domElement);
+
+      if (animationIdRef.current) cancelAnimationFrame(animationIdRef.current);
+      currentMount.removeChild(renderer.domElement);
+      renderer.dispose();
+      rendererRef.current = null;
+      controlsRef.current = null;
+      cameraRef.current = null;
+      sceneRef.current = null;
+      earthGroupRef.current = null;
+      lightsRef.current = null;
+      cloudsRef.current = null;
+      glowRef.current = null;
+      markerRefs.current = [];
     };
+  }, []);
+
+  // --- Update only the earth group when `articles` changes (preserve orientation & controls) ---
+  useEffect(() => {
+    const scene = sceneRef.current;
+    const oldGroup = earthGroupRef.current;
+    if (!scene) return;
+
+    // If we haven't initialized yet, do nothing (mount effect will create)
+    // If initialized, replace the group but keep orientation and layers
+    if (oldGroup) {
+      // Preserve current orientation
+      const prevQuat = oldGroup.quaternion.clone();
+
+      // Detach persistent child layers from old group
+      const lights = lightsRef.current;
+      const clouds = cloudsRef.current;
+      const glow = glowRef.current;
+      lights?.parent?.remove(lights);
+      clouds?.parent?.remove(clouds);
+      glow?.parent?.remove(glow);
+
+      // Remove old markers
+      markerRefs.current.forEach((m) => m.parent?.remove(m));
+      markerRefs.current = [];
+
+      // Remove and replace the earth group
+      scene.remove(oldGroup);
+      const newGroup = createEarthGroup(articles, markerRefs, gsap);
+      // Reapply the exact previous orientation so the globe doesn't "jump"
+      newGroup.quaternion.copy(prevQuat);
+      earthGroupRef.current = newGroup;
+
+      // Re-attach persistent layers
+      if (lights) newGroup.add(lights);
+      if (clouds) newGroup.add(clouds);
+      if (glow) newGroup.add(glow);
+
+      scene.add(newGroup);
+      setHoveredInfo(null);
+    } else {
+      // In case articles arrive after mount but before initial group creation
+      const newGroup = createEarthGroup(articles, markerRefs, gsap);
+      newGroup.rotation.z = (-12.4 * Math.PI) / 180;
+      earthGroupRef.current = newGroup;
+      scene.add(newGroup);
+      if (lightsRef.current) newGroup.add(lightsRef.current);
+      if (cloudsRef.current) newGroup.add(cloudsRef.current);
+      if (glowRef.current) newGroup.add(glowRef.current);
+    }
   }, [articles]);
 
   return (
@@ -272,7 +369,7 @@ const ThreeGlobe: React.FC<{ articles: any[] }> = ({ articles }) => {
           height: 100%;
           transform: translateY(-100px);
           pointer-events: none;
-          overflow: visible
+          overflow: visible;
         }
 
         .cropped-globe {

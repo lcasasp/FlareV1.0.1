@@ -1,6 +1,21 @@
 import * as THREE from "three";
+import gsap from "gsap";
 import { getFresnelMat } from "./src/getFresnelMat";
- 
+
+const __texLoader = new THREE.TextureLoader();
+const __texCache = new Map<string, THREE.Texture>();
+
+function getTexture(url: string) {
+  if (__texCache.has(url)) return __texCache.get(url)!;
+  const t = __texLoader.load(url);
+  // sensible defaults; prevents shimmering/flicker on re-add
+  t.minFilter = THREE.LinearMipmapLinearFilter;
+  t.magFilter = THREE.LinearFilter;
+  t.generateMipmaps = true;
+  __texCache.set(url, t);
+  return t;
+}
+
 export const createEarthGroup = (
   articles: any[],
   markerRefs: any,
@@ -18,7 +33,7 @@ export const createEarthGroup = (
       normalized
     );
     return color;
-  };
+  }
 
   function latLongToVector3(lat: number, lon: number, radius = 1.02) {
     const lonOffset = (Math.random() - 0.5) * 3;
@@ -32,11 +47,10 @@ export const createEarthGroup = (
     );
   }
 
-  const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const material = new THREE.MeshPhongMaterial({
-    map: loader.load("/textures/8k_globemap.jpeg"),
-    bumpMap: loader.load("/textures/4k_earthbump.jpg"),
+    map: getTexture("/textures/8k_globemap.jpeg"),
+    bumpMap: getTexture("/textures/4k_earthbump.jpg"),
     bumpScale: 5,
   });
 
@@ -44,11 +58,13 @@ export const createEarthGroup = (
   earthGroup.add(earthMesh);
 
   articles.forEach((article) => {
+    // --- Main location marker ---
     if (article.mainLocation) {
       const position = latLongToVector3(
         article.mainLocation.latitude,
         article.mainLocation.longitude
       );
+
       const sentimentColor = getSentimentColor(article.sentiment);
       const mainMarkerMaterial = new THREE.MeshBasicMaterial({
         color: sentimentColor,
@@ -56,54 +72,105 @@ export const createEarthGroup = (
         opacity: 0.8,
       });
 
+      // Base height from compositeScore, clamped
       const markerHeight = article.compositeScore
         ? Math.min(0.01 + article.compositeScore / 1000, 0.5) * 5
         : 0.1;
-      const maxMarkerHeight = .6;
+      const maxMarkerHeight = 0.6;
       const clampedMarkerHeight = Math.min(markerHeight, maxMarkerHeight);
 
-      const mainMarkerGeometry = new THREE.BoxGeometry(0.01, 0.01, clampedMarkerHeight);
+      const mainMarkerGeometry = new THREE.BoxGeometry(
+        0.01, // x
+        0.01, // y
+        clampedMarkerHeight // z = base height (scale.z grows from 0 -> 1)
+      );
+
       const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
       mainMarker.position.copy(position);
       mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
       mainMarker.position.normalize().multiplyScalar(1.02);
+
+      // Useful metadata for hit-testing / selective animation
       mainMarker.userData = {
+        uri: article.uri,
         title: article.title,
         image: article.image,
-        url: article.infoArticle.eng.url,
+        url: article.infoArticle?.eng?.url,
       };
+
+      // --- Grow-in animation then oscillate ---
+      // Start collapsed along Z (height)
+      mainMarker.scale.set(1, 1, 0.0001);
+      // Small deterministic jitter to avoid all markers animating in sync
+      const jitter = ((article.socialScore || 0) % 7) * 0.03;
+
       gsap.to(mainMarker.scale, {
-        z: 1.4,
-        duration: 4,
-        repeat: -1,
-        yoyo: true,
+        z: 1,
+        duration: 0.55,
+        ease: "power2.out",
+        delay: jitter,
+        onComplete: () => {
+          gsap.to(mainMarker.scale, {
+            z: 1.4,
+            duration: 4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+        },
       });
+
       earthGroup.add(mainMarker);
       markerRefs.current.push(mainMarker);
     }
 
+    // --- Additional location markers ---
     article.locations.forEach(
       (location: { latitude: number; longitude: number }) => {
         const position = latLongToVector3(
           location.latitude,
           location.longitude
         );
+
         const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.1);
         const markerMaterial = new THREE.MeshBasicMaterial({
           color: "#3CD2F9",
           transparent: true,
           opacity: 0.4,
         });
+
         const marker = new THREE.Mesh(markerGeometry, markerMaterial);
         marker.position.copy(position);
         marker.lookAt(new THREE.Vector3(0, 0, 0));
         marker.position.normalize().multiplyScalar(1.02);
+
         marker.userData = {
+          uri: article.uri,
           title: article.title,
           image: article.image,
-          url: article.infoArticle.eng.url,
+          url: article.infoArticle?.eng?.url,
         };
-        gsap.to(marker.scale, { z: 1.3, duration: 2, repeat: -1, yoyo: true });
+
+        // Grow-in then gentle oscillation
+        marker.scale.set(1, 1, 0.0001);
+        const jitter = ((article.socialScore || 0) % 5) * 0.03;
+
+        gsap.to(marker.scale, {
+          z: 1,
+          duration: 0.45,
+          ease: "power2.out",
+          delay: jitter,
+          onComplete: () => {
+            gsap.to(marker.scale, {
+              z: 1.3,
+              duration: 2.6,
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut",
+            });
+          },
+        });
+
         earthGroup.add(marker);
         markerRefs.current.push(marker);
       }
@@ -114,24 +181,22 @@ export const createEarthGroup = (
 };
 
 export const createLights = () => {
-  const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const lightsMat = new THREE.MeshBasicMaterial({
-    map: loader.load("/textures/4k_nightmap.jpg"),
+    map: getTexture("/textures/4k_nightmap.jpg"),
     blending: THREE.AdditiveBlending,
   });
   return new THREE.Mesh(geometry, lightsMat);
 };
 
 export const createClouds = () => {
-  const loader = new THREE.TextureLoader();
   const geometry = new THREE.SphereGeometry(1, 64, 64);
   const cloudsMat = new THREE.MeshStandardMaterial({
-    map: loader.load("/textures/2k_earth_clouds.jpg"),
+    map: getTexture("/textures/2k_earth_clouds.jpg"),
     transparent: true,
     opacity: 0.3,
     blending: THREE.AdditiveBlending,
-    alphaMap: loader.load("/textures/2k_earth_clouds.jpg"),
+    alphaMap: getTexture("/textures/2k_earth_clouds.jpg"),
   });
   const cloudsMesh = new THREE.Mesh(geometry, cloudsMat);
   cloudsMesh.scale.setScalar(1.003);
