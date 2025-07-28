@@ -75,7 +75,7 @@ def handle_get_articles(limit=None, after=None):
             "query": {"match_all": {}},
             "sort": [
                 {"socialScore": {"order": "desc"}},
-                {"uri": {"order": "asc"}},  # stable tie-breaker
+                {"eventDate": {"order": "desc"}},  # stable tie-breaker
             ],
             "size": 1000
         })
@@ -88,7 +88,7 @@ def handle_get_articles(limit=None, after=None):
         "query": {"match_all": {}},
         "sort": [
             {"socialScore": {"order": "desc"}},
-            {"uri": {"order": "asc"}},
+            {"eventDate": {"order": "desc"}},
         ],
         "size": limit_i,
     }
