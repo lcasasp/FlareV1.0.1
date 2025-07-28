@@ -31,11 +31,42 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
   const mouse = useRef(new THREE.Vector2());
   const animationIdRef = useRef<number | null>(null);
 
-  const pickMarkerFromIntersects = (hits: THREE.Intersection[]) => {
+  const getMarkerNode = (o: THREE.Object3D | null) => {
+    let cur: THREE.Object3D | null = o;
+    while (cur && !cur.userData?.url) cur = cur.parent || null;
+    return cur;
+  };
+
+  // treat only OPAQUE meshes as occluders (skip clouds/glow/etc.)
+  const isOpaqueMesh = (obj: THREE.Object3D) => {
+    const mesh = obj as THREE.Mesh;
+    const mat = (mesh as any).material;
+    if (!mat) return true;
+    const list = Array.isArray(mat) ? mat : [mat];
+    // Opaque if any sub‑material is not marked transparent (or has high opacity)
+    return list.some((m) => !m?.transparent || (m?.opacity ?? 1) >= 0.99);
+  };
+
+  // Pick first VISIBLE marker that is IN FRONT of the nearest opaque hit
+  const pickFrontMostMarker = (hits: THREE.Intersection[]) => {
+    // 1) Nearest opaque (non-marker) distance
+    let nearestOpaque = Infinity;
     for (const h of hits) {
-      let obj: THREE.Object3D | null = h.object;
-      while (obj && !obj.userData?.url) obj = obj.parent || null;
-      if (obj && (obj as any).visible !== false) return obj as THREE.Object3D;
+      const maybeMarker = getMarkerNode(h.object);
+      if (!maybeMarker && isOpaqueMesh(h.object)) {
+        nearestOpaque = h.distance;
+        break;
+      }
+    }
+    const EPS = 1e-3;
+
+    // 2) First marker not behind the nearest opaque
+    for (const h of hits) {
+      const marker = getMarkerNode(h.object);
+      if (!marker) continue;
+      if ((marker as any).visible === false) continue;
+      // Accept only if the marker is at/closer than the nearest opaque
+      if (h.distance <= nearestOpaque + EPS) return marker;
     }
     return null;
   };
@@ -150,11 +181,11 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
         if (mouse.current.x && mouse.current.y) {
           raycaster.current.setFromCamera(mouse.current, cameraLocal);
 
-          const intersects = earthLocal
+          const hits = earthLocal
             ? raycaster.current.intersectObject(earthLocal, true)
             : [];
 
-          const pick = pickMarkerFromIntersects(intersects);
+          const pick = pickFrontMostMarker(hits);
 
           if (pick) {
             setHoveredInfo({
@@ -207,11 +238,9 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
       if (!cameraLocal || !group) return;
 
       raycaster.current.setFromCamera(mouse.current, cameraLocal);
-
       const hits = raycaster.current.intersectObject(group, true);
-      const target = pickMarkerFromIntersects(hits);
-
-      const url = (target as any)?.userData?.url;
+      const pick = pickFrontMostMarker(hits);
+      const url = (pick as any)?.userData?.url;
       if (url) window.open(url, "_blank");
     };
 

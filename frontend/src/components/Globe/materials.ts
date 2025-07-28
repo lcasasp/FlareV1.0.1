@@ -61,134 +61,78 @@ export const createEarthGroup = (
   articles.forEach((article) => {
     const isNew = !knownUris || !knownUris.has(article.uri);
 
-    // --- Main location marker ---
-    if (article.mainLocation) {
-      const position = latLongToVector3(
-        article.mainLocation.latitude,
-        article.mainLocation.longitude
-      );
+    // --- Main location marker ONLY ---
+    if (!article.mainLocation) return;
 
-      const sentimentColor = getSentimentColor(article.sentiment);
-      const mainMarkerMaterial = new THREE.MeshBasicMaterial({
-        color: sentimentColor,
-        transparent: true,
-        opacity: 0.8,
+    const position = latLongToVector3(
+      article.mainLocation.latitude,
+      article.mainLocation.longitude
+    );
+
+    const sentimentColor = getSentimentColor(article.sentiment);
+    const mainMarkerMaterial = new THREE.MeshBasicMaterial({
+      color: sentimentColor,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    // Base height from compositeScore, clamped
+    const markerHeight = article.compositeScore
+      ? Math.min(0.01 + article.compositeScore / 1000, 0.5) * 5
+      : 0.1;
+    const maxMarkerHeight = 0.6;
+    const clampedMarkerHeight = Math.min(markerHeight, maxMarkerHeight);
+
+    const mainMarkerGeometry = new THREE.BoxGeometry(
+      0.01, // x
+      0.01, // y
+      clampedMarkerHeight // z = base height; we animate scale.z
+    );
+
+    const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
+    mainMarker.position.copy(position);
+    mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
+    mainMarker.position.normalize().multiplyScalar(1.02);
+
+    mainMarker.userData = {
+      uri: article.uri,
+      title: article.title,
+      image: article.image,
+      url: article.infoArticle?.eng?.url,
+    };
+
+    // Animate only for newly arrived articles; existing ones keep oscillating
+    if (isNew) {
+      mainMarker.scale.set(1, 1, 0.0001);
+      const jitter = ((article.socialScore || 0) % 7) * 0.03;
+      gsap.to(mainMarker.scale, {
+        z: 1,
+        duration: 0.55,
+        ease: "power2.out",
+        delay: jitter,
+        onComplete: () => {
+          gsap.to(mainMarker.scale, {
+            z: 1.4,
+            duration: 4,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut",
+          });
+        },
       });
-
-      // Base height from compositeScore, clamped
-      const markerHeight = article.compositeScore
-        ? Math.min(0.01 + article.compositeScore / 1000, 0.5) * 5
-        : 0.1;
-      const maxMarkerHeight = 0.6;
-      const clampedMarkerHeight = Math.min(markerHeight, maxMarkerHeight);
-
-      const mainMarkerGeometry = new THREE.BoxGeometry(
-        0.01, // x
-        0.01, // y
-        clampedMarkerHeight // z = base height (scale.z grows from 0 -> 1)
-      );
-
-      const mainMarker = new THREE.Mesh(mainMarkerGeometry, mainMarkerMaterial);
-      mainMarker.position.copy(position);
-      mainMarker.lookAt(new THREE.Vector3(0, 0, 0));
-      mainMarker.position.normalize().multiplyScalar(1.02);
-
-      // Useful metadata for hit-testing / selective animation
-      mainMarker.userData = {
-        uri: article.uri,
-        title: article.title,
-        image: article.image,
-        url: article.infoArticle?.eng?.url,
-      };
-
-      // --- Grow-in animation then oscillate ---
-      if (isNew) {
-        mainMarker.scale.set(1, 1, 0.0001);
-        // Small deterministic jitter to avoid all markers animating in sync
-        const jitter = ((article.socialScore || 0) % 7) * 0.03;
-
-        gsap.to(mainMarker.scale, {
-          z: 1,
-          duration: 0.55,
-          ease: "power2.out",
-          delay: jitter,
-          onComplete: () => {
-            gsap.to(mainMarker.scale, {
-              z: 1.4,
-              duration: 4,
-              repeat: -1,
-              yoyo: true,
-              ease: "sine.inOut",
-            });
-          },
-        });
-      } else {
-        // already known -> no grow-in; just oscillate
-        mainMarker.scale.set(1, 1, 1);
-        gsap.to(mainMarker.scale, {
-          z: 1.4,
-          duration: 4,
-          repeat: -1,
-          yoyo: true,
-          ease: "sine.inOut",
-        });
-      }
-
-      earthGroup.add(mainMarker);
-      markerRefs.current.push(mainMarker);
+    } else {
+      mainMarker.scale.set(1, 1, 1);
+      gsap.to(mainMarker.scale, {
+        z: 1.4,
+        duration: 4,
+        repeat: -1,
+        yoyo: true,
+        ease: "sine.inOut",
+      });
     }
 
-    // --- Additional location markers ---
-    article.locations.forEach(
-      (location: { latitude: number; longitude: number }) => {
-        const position = latLongToVector3(
-          location.latitude,
-          location.longitude
-        );
-
-        const markerGeometry = new THREE.BoxGeometry(0.01, 0.01, 0.1);
-        const markerMaterial = new THREE.MeshBasicMaterial({
-          color: "#3CD2F9",
-          transparent: true,
-          opacity: 0.4,
-        });
-
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.copy(position);
-        marker.lookAt(new THREE.Vector3(0, 0, 0));
-        marker.position.normalize().multiplyScalar(1.02);
-
-        marker.userData = {
-          uri: article.uri,
-          title: article.title,
-          image: article.image,
-          url: article.infoArticle?.eng?.url,
-        };
-
-        // Grow-in then gentle oscillation
-        marker.scale.set(1, 1, 0.0001);
-        const jitter = ((article.socialScore || 0) % 5) * 0.03;
-
-        gsap.to(marker.scale, {
-          z: 1,
-          duration: 0.45,
-          ease: "power2.out",
-          delay: jitter,
-          onComplete: () => {
-            gsap.to(marker.scale, {
-              z: 1.3,
-              duration: 2.6,
-              repeat: -1,
-              yoyo: true,
-              ease: "sine.inOut",
-            });
-          },
-        });
-
-        earthGroup.add(marker);
-        markerRefs.current.push(marker);
-      }
-    );
+    earthGroup.add(mainMarker);
+    markerRefs.current.push(mainMarker);
   });
 
   return earthGroup;
