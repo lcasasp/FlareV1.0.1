@@ -13,6 +13,8 @@ import type { FlareArticle } from "@/types/flare";
 const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
   const mountRef = useRef<HTMLDivElement>(null);
 
+  const seenUrisRef = useRef<Set<string>>(new Set());
+
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -28,6 +30,15 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
   const raycaster = useRef(new THREE.Raycaster());
   const mouse = useRef(new THREE.Vector2());
   const animationIdRef = useRef<number | null>(null);
+
+  const pickMarkerFromIntersects = (hits: THREE.Intersection[]) => {
+    for (const h of hits) {
+      let obj: THREE.Object3D | null = h.object;
+      while (obj && !obj.userData?.url) obj = obj.parent || null;
+      if (obj && (obj as any).visible !== false) return obj as THREE.Object3D;
+    }
+    return null;
+  };
 
   const [hoveredInfo, setHoveredInfo] = useState<{
     title: string;
@@ -97,7 +108,12 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
     controlsRef.current = controls;
 
     // Initial Earth group (from current articles; ok if empty)
-    const earthGroup = createEarthGroup(articles, markerRefs, gsap);
+    const earthGroup = createEarthGroup(
+      articles,
+      markerRefs,
+      gsap,
+      seenUrisRef.current
+    );
     earthGroup.rotation.z = (-12.4 * Math.PI) / 180;
     earthGroupRef.current = earthGroup;
     scene.add(earthGroup);
@@ -133,26 +149,19 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
       if (!isTouchscreen()) {
         if (mouse.current.x && mouse.current.y) {
           raycaster.current.setFromCamera(mouse.current, cameraLocal);
-          const allObjects: THREE.Object3D[] = [
-            earthLocal,
-            ...markerRefs.current,
-          ];
-          const intersects = raycaster.current.intersectObjects(
-            allObjects,
-            true
-          );
 
-          if (intersects.length > 0 && intersects[0].object.visible) {
-            const intersected = intersects[0].object;
-            setHoveredInfo(
-              intersected.userData.url
-                ? {
-                    title: intersected.userData.title,
-                    image: intersected.userData.image,
-                    url: intersected.userData.url,
-                  }
-                : null
-            );
+          const intersects = earthLocal
+            ? raycaster.current.intersectObject(earthLocal, true)
+            : [];
+
+          const pick = pickMarkerFromIntersects(intersects);
+
+          if (pick) {
+            setHoveredInfo({
+              title: (pick as any).userData.title,
+              image: (pick as any).userData.image,
+              url: (pick as any).userData.url,
+            });
             isMouseOverGlobe.current = true;
             rotationSpeedRef.current = 0;
           } else {
@@ -194,14 +203,16 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
 
     const handleMouseUp = () => {
       const cameraLocal = cameraRef.current;
-      if (!cameraLocal) return;
+      const group = earthGroupRef.current;
+      if (!cameraLocal || !group) return;
+
       raycaster.current.setFromCamera(mouse.current, cameraLocal);
-      const intersects = raycaster.current.intersectObjects(markerRefs.current);
-      if (intersects.length > 0 && intersects[0].object.visible) {
-        const intersectedMarker = intersects[0].object;
-        const url = intersectedMarker.userData.url;
-        if (url) window.open(url, "_blank");
-      }
+
+      const hits = raycaster.current.intersectObject(group, true);
+      const target = pickMarkerFromIntersects(hits);
+
+      const url = (target as any)?.userData?.url;
+      if (url) window.open(url, "_blank");
     };
 
     const handleTouchMove = (event: TouchEvent) => {
@@ -283,48 +294,36 @@ const ThreeGlobe: React.FC<{ articles: FlareArticle[] }> = ({ articles }) => {
     const oldGroup = earthGroupRef.current;
     if (!scene) return;
 
-    // If we haven't initialized yet, do nothing (mount effect will create)
-    // If initialized, replace the group but keep orientation and layers
-    if (oldGroup) {
-      // Preserve current orientation
-      const prevQuat = oldGroup.quaternion.clone();
+    // Keep prior orientation
+    const prevQuat = oldGroup ? oldGroup.quaternion.clone() : undefined;
 
-      // Detach persistent child layers from old group
-      const lights = lightsRef.current;
-      const clouds = cloudsRef.current;
-      const glow = glowRef.current;
-      lights?.parent?.remove(lights);
-      clouds?.parent?.remove(clouds);
-      glow?.parent?.remove(glow);
+    markerRefs.current.length = 0;
 
-      // Remove old markers
-      markerRefs.current.forEach((m) => m.parent?.remove(m));
-      markerRefs.current = [];
+    // Articles-update effect (every time `articles` changes)
+    const newGroup = createEarthGroup(
+      articles,
+      markerRefs,
+      gsap,
+      seenUrisRef.current
+    );
+    if (prevQuat) newGroup.quaternion.copy(prevQuat);
 
-      // Remove and replace the earth group
-      scene.remove(oldGroup);
-      const newGroup = createEarthGroup(articles, markerRefs, gsap);
-      // Reapply the exact previous orientation so the globe doesn't "jump"
-      newGroup.quaternion.copy(prevQuat);
-      earthGroupRef.current = newGroup;
+    // Re-attach persistent layers before making the swap
+    if (lightsRef.current) newGroup.add(lightsRef.current);
+    if (cloudsRef.current) newGroup.add(cloudsRef.current);
+    if (glowRef.current) newGroup.add(glowRef.current);
 
-      // Re-attach persistent layers
-      if (lights) newGroup.add(lights);
-      if (clouds) newGroup.add(clouds);
-      if (glow) newGroup.add(glow);
+    // Add the new group first (prevents a blank frame), then remove the old
+    scene.add(newGroup);
+    if (oldGroup) scene.remove(oldGroup);
+    earthGroupRef.current = newGroup;
 
-      scene.add(newGroup);
-      setHoveredInfo(null);
-    } else {
-      // In case articles arrive after mount but before initial group creation
-      const newGroup = createEarthGroup(articles, markerRefs, gsap);
-      newGroup.rotation.z = (-12.4 * Math.PI) / 180;
-      earthGroupRef.current = newGroup;
-      scene.add(newGroup);
-      if (lightsRef.current) newGroup.add(lightsRef.current);
-      if (cloudsRef.current) newGroup.add(cloudsRef.current);
-      if (glowRef.current) newGroup.add(glowRef.current);
-    }
+    // Smooth appear only for URIs that weren't present before
+    const prev = seenUrisRef.current;
+    const next = new Set(articles.map((a) => a.uri));
+
+    seenUrisRef.current = next;
+    setHoveredInfo(null);
   }, [articles]);
 
   return (

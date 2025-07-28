@@ -19,7 +19,8 @@ function getTexture(url: string) {
 export const createEarthGroup = (
   articles: any[],
   markerRefs: any,
-  gsap: any
+  gsap: any,
+  knownUris?: Set<string>
 ) => {
   const earthGroup = new THREE.Group();
 
@@ -58,6 +59,8 @@ export const createEarthGroup = (
   earthGroup.add(earthMesh);
 
   articles.forEach((article) => {
+    const isNew = !knownUris || !knownUris.has(article.uri);
+
     // --- Main location marker ---
     if (article.mainLocation) {
       const position = latLongToVector3(
@@ -99,26 +102,37 @@ export const createEarthGroup = (
       };
 
       // --- Grow-in animation then oscillate ---
-      // Start collapsed along Z (height)
-      mainMarker.scale.set(1, 1, 0.0001);
-      // Small deterministic jitter to avoid all markers animating in sync
-      const jitter = ((article.socialScore || 0) % 7) * 0.03;
+      if (isNew) {
+        mainMarker.scale.set(1, 1, 0.0001);
+        // Small deterministic jitter to avoid all markers animating in sync
+        const jitter = ((article.socialScore || 0) % 7) * 0.03;
 
-      gsap.to(mainMarker.scale, {
-        z: 1,
-        duration: 0.55,
-        ease: "power2.out",
-        delay: jitter,
-        onComplete: () => {
-          gsap.to(mainMarker.scale, {
-            z: 1.4,
-            duration: 4,
-            repeat: -1,
-            yoyo: true,
-            ease: "sine.inOut",
-          });
-        },
-      });
+        gsap.to(mainMarker.scale, {
+          z: 1,
+          duration: 0.55,
+          ease: "power2.out",
+          delay: jitter,
+          onComplete: () => {
+            gsap.to(mainMarker.scale, {
+              z: 1.4,
+              duration: 4,
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut",
+            });
+          },
+        });
+      } else {
+        // already known -> no grow-in; just oscillate
+        mainMarker.scale.set(1, 1, 1);
+        gsap.to(mainMarker.scale, {
+          z: 1.4,
+          duration: 4,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
 
       earthGroup.add(mainMarker);
       markerRefs.current.push(mainMarker);
