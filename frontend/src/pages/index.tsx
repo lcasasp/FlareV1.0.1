@@ -69,7 +69,7 @@ const Home: React.FC = () => {
     }
 
     const response = await axios.get(
-      `${API_CONFIG.BASE_URL}/${API_CONFIG.ENDPOINTS.SEARCH}?query=${query}`
+      `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.SEARCH}?query=${query}`
     );
     const formattedData = response.data.map(formatArticleFromSource);
     handleFilterChange(updatedFilters, formattedData);

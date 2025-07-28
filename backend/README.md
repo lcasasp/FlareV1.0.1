@@ -45,7 +45,7 @@ cd backend
 docker compose up --build
 ```
 
-or
+or if es already running: 
 
 ```
 cd ./backend/src

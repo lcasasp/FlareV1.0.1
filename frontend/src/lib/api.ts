@@ -55,7 +55,7 @@ export async function fetchArticlesChunk(
   params: { limit?: number; after?: string } = {}
 ): Promise<ArticlesChunk> {
   const { limit = 100, after } = params;
-  const url = `${API_CONFIG.BASE_URL}/${
+  const url = `${API_CONFIG.BASE_URL}${
     API_CONFIG.ENDPOINTS.ARTICLES
   }?limit=${limit}${after ? `&after=${encodeURIComponent(after)}` : ""}`;
 

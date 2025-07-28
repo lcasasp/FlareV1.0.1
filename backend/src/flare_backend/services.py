@@ -104,61 +104,93 @@ def extract_and_prepare_event_data(event_response):
 
 def build_search_query(query):
     return {
+        "size": 100,
+        "track_scores": True,
         "query": {
-            "bool": {
-                "must": [
-                    {
-                        "multi_match": {
-                            "query": query,
-                            "fields": [
-                                "title.eng^2.5",
-                                "summary.eng^1",
-                                "concepts.label.eng^2.5"
-                            ],
-                            "type": "most_fields",
-                            "fuzziness": "AUTO"
-                        }
-                    },
-                    {
-                        "function_score": {
-                            "query": {
-                                "range": {
-                                    "eventDate": {"gte": "now-30d/d"}
+            "function_score": {
+                "query": {
+                    "bool": {
+                        "filter": [
+                            {"range": {"eventDate": {"gte": "now-30d/d"}}}
+                        ],
+                        "should": [
+                            {
+                                "bool": {
+                                    "should": [
+                                        {
+                                            "match": {
+                                                "title.eng": {
+                                                    "query": query,
+                                                    "boost": 3,
+                                                    "fuzziness": "AUTO"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "concepts.label.eng": {
+                                                    "query": query,
+                                                    "boost": 2,
+                                                    "fuzziness": "AUTO"
+                                                }
+                                            }
+                                        },
+                                        {
+                                            "match": {
+                                                "summary.eng": {
+                                                    "query": query,
+                                                    "fuzziness": "AUTO"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "minimum_should_match": "2<-25% 3<-10%"
                                 }
                             },
-                            "functions": [
-                                {
-                                    "gauss": {
-                                        "eventDate": {
-                                            "origin": "now",
-                                            "scale": "10d",
-                                            "offset": "2d",
-                                            "decay": 0.5
-                                        }
-                                    }
+                            {
+                                "multi_match": {
+                                    "query": query,
+                                    "type": "phrase",
+                                    "fields": [
+                                        "title.eng^4",
+                                        "summary.eng^2",
+                                        "concepts.label.eng^3"
+                                    ],
+                                    "slop": 2
                                 }
-                            ],
-                            "score_mode": "sum",
-                            "boost_mode": "multiply"
-                        }
+                            }
+                        ],
+                        "minimum_should_match": 1
                     }
+                },
+                "functions": [
+                    {"gauss": {
+                        "eventDate": {
+                            "origin": "now",
+                            "scale": "10d",
+                            "offset": "2d",
+                            "decay": 0.5
+                        }
+                    }},
+                    {"field_value_factor": {
+                        "field": "socialScore",
+                        "modifier": "log1p",
+                        "missing": 0
+                    }},
+                    {"field_value_factor": {
+                        "field": "totalArticleCount",
+                        "modifier": "log1p",
+                        "missing": 0
+                    }}
                 ],
-                "should": [
-                    {
-                        "multi_match": {
-                            "query": query,
-                            "fields": [
-                                "concepts.label.eng^2",
-                                "summary.eng^1"
-                            ],
-                            "type": "phrase",
-                            "boost": 2
-                        }
-                    }
-                ]
+                "score_mode": "sum",
+                "boost_mode": "sum"
             }
         },
-        "size": 100
+        "sort": [
+            {"_score": "desc"},
+            {"eventDate": "desc"}
+        ]
     }
 
 
