@@ -9,7 +9,10 @@ from aws_cdk import (
     aws_events_targets as targets,
     aws_iam as iam,
     aws_logs as logs,
+    aws_s3 as s3,
+    aws_glue as glue,
 )
+
 from constructs import Construct
 from constants import ECR_REPO_NAME, IMAGE_TAG, INGEST_QUERIES
 
@@ -18,7 +21,8 @@ class FlareApiStack(Stack):
     def __init__(self, scope: Construct, cid: str, *, stage: str, **kwargs) -> None:
         super().__init__(scope, cid, **kwargs)
 
-        # ───────────────────────────────────────── 1. Shared role
+        # ───────────────────────────────────────── Shared role
+
         lambda_role = iam.Role(
             self, "LambdaRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
@@ -29,7 +33,8 @@ class FlareApiStack(Stack):
             ],
         )
 
-        # ───────────────────────────────────────── 2. Public OpenSearch
+        # ───────────────────────────────────────── Public OpenSearch
+
         domain_name = f"flare-events-{stage}"
         domain = opensearch.CfnDomain(
             self, "Domain",
@@ -57,7 +62,8 @@ class FlareApiStack(Stack):
         )
         public_endpoint = f"https://{domain.attr_domain_endpoint}"
 
-        # ───────────────────────────────────────── 3. One ECR image
+        # ───────────────────────────────────────── ECR image
+
         repo = ecr.Repository.from_repository_name(self, "Repo", ECR_REPO_NAME)
 
         def docker_fn(id_: str, timeout_sec: int, handler: str) -> _lambda.DockerImageFunction:
@@ -80,13 +86,65 @@ class FlareApiStack(Stack):
                 log_retention=logs.RetentionDays.ONE_WEEK,
             )
 
-        # ───────────────────────────────────────── 4. Lambdas
+        # ───────────────────────────────────────── Lambdas
+
         api_fn = docker_fn(
             "ApiFn", 30, "flare_backend.handler_api.lambda_handler")
         ingest_fn = docker_fn(
             "IngestFn", 60, "flare_backend.handler_ingest.lambda_handler")
 
-        # ───────────────────────────────────────── 5. Schedule ingest (06:00 UTC)
+        # ───────────────────────────────────────── Bucket
+
+        snapshots_bucket = s3.Bucket(
+            self, "SnapshotsBucket",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True,
+            removal_policy=RemovalPolicy.RETAIN,
+        )
+        snapshots_bucket.grant_write(ingest_fn)
+
+        ingest_fn.add_environment(
+            "SNAPSHOT_BUCKET", snapshots_bucket.bucket_name)
+
+        # ───────────────────────────────────────── Glue
+
+        glue_role = iam.Role(
+            self, "SnapshotsGlueRole",
+            assumed_by=iam.ServicePrincipal("glue.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name(
+                    "service-role/AWSGlueServiceRole")
+            ],
+        )
+        snapshots_bucket.grant_read(glue_role)
+
+        glue_db = glue.CfnDatabase(
+            self, "SnapshotsDb",
+            catalog_id=self.account,
+            database_input={"name": "snapshots"}
+        )
+
+        glue_crawler = glue.CfnCrawler(
+            self, "SnapshotsCrawler",
+            name="snapshots-crawler",
+            role=glue_role.role_arn,
+            database_name=glue_db.ref,
+            targets={"s3Targets": [
+                {"path": f"s3://{snapshots_bucket.bucket_name}/snapshots/"}]},
+            # run at 06:10 UTC ingest
+            schedule={"scheduleExpression": "cron(10 6 * * ? *)"},
+        )
+
+        # allow ingest to start the crawler after a snapshot (faster metadata freshness)
+        ingest_fn.add_to_role_policy(iam.PolicyStatement(
+            actions=["glue:StartCrawler"],
+            resources=[
+                f"arn:aws:glue:{self.region}:{self.account}:crawler/snapshots-crawler"],
+        ))
+        ingest_fn.add_environment("GLUE_CRAWLER_NAME", "snapshots-crawler")
+
+        # ───────────────────────────────────────── Schedule ingest (06:00 UTC)
         if stage == "prod":
             events.Rule(
                 self, "DailyIngest",
@@ -94,7 +152,7 @@ class FlareApiStack(Stack):
                 targets=[targets.LambdaFunction(ingest_fn)],
             )
 
-        # ───────────────────────────────────────── 6. HTTP API (public)
+        # ───────────────────────────────────────── HTTP API (public)
         api = apigw.HttpApi(
             self, "HttpApi",
             api_name=f"flare-api-{stage}",
@@ -128,8 +186,14 @@ class FlareApiStack(Stack):
                 integration=integ.HttpLambdaIntegration("FetchInt", ingest_fn),
             )
 
-        # ───────────────────────────────────────── 7. Outputs
+        # ───────────────────────────────────────── Outputs
+
         CfnOutput(self, "ApiUrl", value=api.url,
                   export_name=f"FlareApiUrl-{stage}")
         CfnOutput(self, "DomainEndpoint", value=public_endpoint,
                   export_name=f"FlareDomain-{stage}")
+
+        CfnOutput(self, "SnapshotsBucketName",
+                  value=snapshots_bucket.bucket_name)
+        CfnOutput(self, "GlueDatabase", value="snapshots")
+        CfnOutput(self, "GlueCrawlerName", value="snapshots-crawler")
